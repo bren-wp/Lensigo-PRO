@@ -52,21 +52,23 @@ object PanoramaComposer {
                         val outWidth = fullWidth +
                             maxEstimatedAdvance * (frames.size - 1)
                         require(outWidth <= 6200) { "Prevelika panorama" }
-                        output = Bitmap.createBitmap(outWidth,
+                        val surface = Bitmap.createBitmap(outWidth,
                             targetHeight + margin * 2, Bitmap.Config.ARGB_8888)
-                        output.eraseColor(Color.BLACK)
-                        canvas = Canvas(output)
+                        output = surface
+                        surface.eraseColor(Color.BLACK)
+                        canvas = Canvas(surface)
                         accumulated.setTranslate(0f, margin.toFloat())
                     }
-                    scaled = Bitmap.createScaledBitmap(
+                    val currentScaled = Bitmap.createScaledBitmap(
                         decoded, fullWidth, targetHeight, true
                     )
+                    scaled = currentScaled
                     if (index != 0) {
                         // True planar 3x3 homography from feature matches with
                         // deterministic RANSAC; fall back to safe fixed overlap
                         // when a scene lacks stable, textured correspondence.
                         val relative = lastScaled?.let {
-                            PanoramaRegistration.estimate(it,scaled,advance)
+                            PanoramaRegistration.estimate(it,currentScaled,advance)
                         } ?: Matrix().apply { setTranslate(advance.toFloat(),0f) }
                         accumulated = Matrix().apply {
                             setConcat(accumulated,relative)
@@ -74,7 +76,7 @@ object PanoramaComposer {
                     }
                     val paint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
                     if (index == 0) {
-                        canvas!!.drawBitmap(scaled, accumulated, paint)
+                        canvas!!.drawBitmap(currentScaled, accumulated, paint)
                     } else {
                         val drawing = canvas!!
                         drawing.save()
@@ -87,13 +89,13 @@ object PanoramaComposer {
                             drawing.save()
                             drawing.clipRect(left,0,right,targetHeight)
                             paint.alpha=(255f*(i+.5f)/pieces).toInt()
-                            drawing.drawBitmap(scaled,0f,0f,paint)
+                            drawing.drawBitmap(currentScaled,0f,0f,paint)
                             drawing.restore()
                         }
                         drawing.save()
                         drawing.clipRect(overlap,0,fullWidth,targetHeight)
                         paint.alpha=255
-                        drawing.drawBitmap(scaled,0f,0f,paint)
+                        drawing.drawBitmap(currentScaled,0f,0f,paint)
                         drawing.restore()
                         drawing.restore()
                     }
@@ -104,11 +106,11 @@ object PanoramaComposer {
                     minTop=minOf(minTop,corners[1],corners[3],corners[5],corners[7])
                     maxBottom=maxOf(maxBottom,corners[1],corners[3],corners[5],corners[7])
                     lastScaled?.let { if(!it.isRecycled)it.recycle() }
-                    lastScaled=scaled
+                    lastScaled=currentScaled
                     scaled=null
                 } finally {
                     if(scaled?.isRecycled==false)scaled.recycle()
-                    if(!decoded.isRecycled)decoded.recycle()
+                    if(decoded !== lastScaled && !decoded.isRecycled)decoded.recycle()
                 }
             }
             val result=checkNotNull(output)
