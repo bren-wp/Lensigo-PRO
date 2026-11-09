@@ -46,7 +46,6 @@ import androidx.compose.foundation.background
 import androidx.compose.ui.draw.clip
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.gestures.detectTapGestures
 import androidx.compose.foundation.gestures.animateScrollBy
 import androidx.compose.foundation.layout.*
@@ -67,6 +66,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.geometry.Offset
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.graphics.asAndroidBitmap
 import androidx.compose.ui.graphics.ImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.semantics.Role
@@ -304,6 +304,10 @@ private fun LensigoApplication() {
     var currentZoom by remember { mutableFloatStateOf(1f) }
     var lastPhoto by remember { mutableStateOf<Uri?>(null) }
     var lastPhotoThumbnail by remember { mutableStateOf<ImageBitmap?>(null) }
+    DisposableEffect(lastPhotoThumbnail) {
+        val bitmap = lastPhotoThumbnail?.asAndroidBitmap()
+        onDispose { if (bitmap?.isRecycled == false) bitmap.recycle() }
+    }
     LaunchedEffect(lastPhoto) {
         lastPhotoThumbnail = null
         lastPhoto?.let { uri ->
@@ -1367,31 +1371,5 @@ private fun FocusCorners(modifier: Modifier = Modifier, touch: Offset? = null,
             Offset(r - corner, b) to Offset(r, b),
             Offset(r, b) to Offset(r, b - corner)
         ).forEach { (a, z) -> drawLine(White, a, z, strokeWidth = stroke) }
-    }
-}
-
-@Composable
-private fun PageScaffold(title: String, onBack: () -> Unit,
-                         body: @Composable ColumnScope.() -> Unit) {
-    Column(Modifier.fillMaxSize().background(Black)) {
-        Row(Modifier.fillMaxWidth().height(60.dp),
-            verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = onBack) { Icon(Icons.Default.ArrowBack, "Natrag", tint = White) }
-            Text(title, color = White, fontWeight = FontWeight.Bold, fontSize = 21.sp)
-        }
-        Column(Modifier.fillMaxSize().verticalScroll(androidx.compose.foundation.rememberScrollState())
-            .padding(18.dp), verticalArrangement = Arrangement.spacedBy(13.dp), content = body)
-    }
-}
-
-@Composable
-private fun SettingToggle(title: String, subtitle: String, value: Boolean, changed: (Boolean) -> Unit) {
-    Row(Modifier.fillMaxWidth().clickable { changed(!value) }.padding(vertical = 6.dp),
-        verticalAlignment = Alignment.CenterVertically) {
-        Column(Modifier.weight(1f)) {
-            Text(title, color = White, fontWeight = FontWeight.SemiBold)
-            Text(subtitle, color = Muted, fontSize = 12.sp)
-        }
-        Switch(checked = value, onCheckedChange = changed)
     }
 }

@@ -172,6 +172,12 @@ fun GalleryScreen(onBack: () -> Unit, onOpen: (LensMedia) -> Unit,
                             MediaLibrary.thumbnail(context, item, 320)
                         }
                     }
+                    DisposableEffect(image) {
+                        val thumbnail = image
+                        onDispose {
+                            if (thumbnail?.isRecycled == false) thumbnail.recycle()
+                        }
+                    }
                     Box(Modifier.aspectRatio(.72f)
                         .background(Color(0xFF153247), RoundedCornerShape(9.dp))
                         .clickable(
