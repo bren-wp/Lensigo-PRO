@@ -839,7 +839,7 @@ private fun LensigoApplication() {
                 Screen.SPLASH -> LensigoSplash()
                 Screen.WELCOME -> LensigoWelcome(
                     onBack = { (context as? Activity)?.finish() },
-                    onSettings = ::openAppSystemSettings,
+                    onSettings = { moveTo(Screen.SETTINGS) },
                     onContinue = { screen = Screen.PERMISSIONS }
                 )
                 Screen.PERMISSIONS -> LensigoPermissions(
@@ -855,7 +855,7 @@ private fun LensigoApplication() {
                     },
                     onMic = { requestMic.launch(Manifest.permission.RECORD_AUDIO) },
                     onBack = { screen = Screen.WELCOME },
-                    onSettings = ::openAppSystemSettings,
+                    onSettings = { moveTo(Screen.SETTINGS) },
                     onContinue = {
                         // Match the onboarding reference action: open the real
                         // camera immediately. HOME remains available from the
