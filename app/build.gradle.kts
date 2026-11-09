@@ -36,6 +36,8 @@ dependencies {
     implementation("androidx.camera:camera-view:1.6.2")
     implementation("androidx.camera:camera-video:1.6.2")
     implementation("androidx.camera:camera-extensions:1.6.2")
+    // Bundled ML Kit Selfie Segmenter: on-device inference without model download.
+    implementation("com.google.mlkit:segmentation-selfie:16.0.0-beta6")
     testImplementation("junit:junit:4.13.2")
 }
 

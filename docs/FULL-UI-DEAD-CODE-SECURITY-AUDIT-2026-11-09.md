@@ -72,3 +72,10 @@ Sigurnosna regresijska zaštita: `tools/security_audit.py` i `tools/test_securit
 
 - Ranija opcija `HD` bila je ograničena na CameraX `Quality.HD`, čak i na uređajima koji podržavaju 1080p/4K. Sada odabir „Najbolja” traži kvalitetu redom `UHD → FHD → HD → SD`, a Android CameraX odabire dostupnu. SD ostaje eksplicitna štedljiva opcija; za nove instalacije početni odabir je najbolja kvaliteta, ali postojeća korisnička postavka ostaje očuvana.
 - HUD koristi `AUTO` umjesto lažno preciznog „HD” za automatiziran odabir. **To ne jamči 4K niti 60 FPS** — brzina sličica ovisi o kameri, podršci odabrane kvalitete i CameraX implementaciji. Upozorenje o razlici prema mockupu 06 i 16–17 i dalje vrijedi.
+
+## Novi zahvat 09 Portrait — lokalna semantička segmentacija
+
+- Ugrađena je lokalno zapakirana `com.google.mlkit:segmentation-selfie:16.0.0-beta6` (ML Kit; beta API). Nije potreban mrežni pristup tijekom snimanja i app i dalje nema INTERNET permission.
+- Prava maska osobe računa se nad skaliranom kopijom (do 512px), a osobni prednji plan čuva se oštar. Zamućuje se samo pozadina, prema jačini Portret kontrole; ispod praga pouzdanosti postoji meki prijelaz.
+- Ako segmentacijski model nije dostupan ili obrada pukne, zadržava se stari lokalni umjetnički fallback i snimanje ne mora propasti. Model ne daje garantiranu segmentaciju za sve prizore/osobe; treba testirati uzorak više portreta, posebice kosu i detalje ruba.
+- Portretna obrada odvija se samo nakon JPEG capture u pozadinskoj korutini, bez mrežne obrade; korisnički odabrana JPEG kvaliteta ostaje.

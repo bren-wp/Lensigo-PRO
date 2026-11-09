@@ -117,7 +117,7 @@ object MediaLibrary {
         } catch (_: Exception) { null }
     }
 
-    fun saveImage(context: Context, file: File, look: PhotoLook,
+    suspend fun saveImage(context: Context, file: File, look: PhotoLook,
                   quality: Int, lowMemory: Boolean): Uri {
         val values = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, "LENSIGO_" + System.currentTimeMillis() + ".jpg")
@@ -138,14 +138,27 @@ object MediaLibrary {
                 val bitmap = FilterEngine.decode(file,
                     if (look.portraitBlur > 0f) 1600 else if (lowMemory) 2048 else 3072)
                 try {
-                    val result = if (look.isNeutral) bitmap else FilterEngine.apply(bitmap, look)
+                    // Semantic foreground segmentation replaces the previous
+                    // center-weighted fake bokeh where the bundled local model
+                    // is available. A device/model failure safely falls back.
+                    val standardLook = if (look.portraitBlur > 0f)
+                        look.copy(portraitBlur = 0f) else look
+                    val color = if (standardLook.isNeutral) bitmap
+                        else FilterEngine.apply(bitmap, standardLook)
                     try {
-                        if (!result.compress(Bitmap.CompressFormat.JPEG,
-                                quality.coerceIn(70, 100), output)) {
-                            throw IOException("JPEG kodiranje nije uspjelo")
+                        val result = if (look.portraitBlur > 0f)
+                            PortraitSegmentation.render(color, look.portraitBlur)
+                            else color
+                        try {
+                            if (!result.compress(Bitmap.CompressFormat.JPEG,
+                                    quality.coerceIn(70, 100), output)) {
+                                throw IOException("JPEG kodiranje nije uspjelo")
+                            }
+                        } finally {
+                            if (result !== color && !result.isRecycled) result.recycle()
                         }
                     } finally {
-                        if (result !== bitmap && !result.isRecycled) result.recycle()
+                        if (color !== bitmap && !color.isRecycled) color.recycle()
                     }
                 } finally {
                     if (!bitmap.isRecycled) bitmap.recycle()
