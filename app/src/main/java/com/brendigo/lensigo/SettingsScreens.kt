@@ -117,18 +117,12 @@ private fun SettingsItem(
 @Composable
 internal fun LensigoSettingsScreen(
     grid: Boolean, timerSeconds: Int, shutterSound: Boolean,
-    lowMemory: Boolean, noise: Boolean, sharpen: Boolean,
     preferSD: Boolean, jpegQuality: Int,
-    hasMicPermission: Boolean,
     onGrid: (Boolean) -> Unit,
     onTimer: (Int) -> Unit,
     onSound: (Boolean) -> Unit,
-    onLowMemory: (Boolean) -> Unit,
-    onNoise: (Boolean) -> Unit,
-    onSharpen: (Boolean) -> Unit,
     onSD: (Boolean) -> Unit,
     onCameraSettings: () -> Unit,
-    onMicrophone: () -> Unit,
     onAbout: () -> Unit,
     onBack: () -> Unit
 ) {

@@ -1384,39 +1384,16 @@ private fun LensigoApplication() {
                 }
                 Screen.SETTINGS -> LensigoSettingsScreen(
                     grid = gridEnabled, timerSeconds = timerSeconds,
-                    shutterSound = shutterSound, lowMemory = lowMemory,
-                    noise = softenNoise, sharpen = sharpen, preferSD = preferSD,
-                    jpegQuality = jpegQuality, hasMicPermission = hasMicPermission,
+                    shutterSound = shutterSound, preferSD = preferSD,
+                    jpegQuality = jpegQuality,
                     onGrid = { gridEnabled = it; prefs.edit().putBoolean("grid", it).apply() },
                     onTimer = { timerSeconds = it; prefs.edit().putInt("timer", it).apply() },
                     onSound = {
                         shutterSound = it
                         prefs.edit().putBoolean("shutter_sound", it).apply()
                     },
-                    onLowMemory = {
-                        lowMemory = it
-                        prefs.edit().putBoolean("low_memory", it).apply()
-                    },
-                    onNoise = {
-                        softenNoise = it
-                        prefs.edit().putBoolean("noise", it).apply()
-                    },
-                    onSharpen = {
-                        sharpen = it
-                        prefs.edit().putBoolean("sharpen", it).apply()
-                    },
                     onSD = { preferSD = it; prefs.edit().putBoolean("video_sd", it).apply() },
                     onCameraSettings = { moveTo(Screen.CAMERA_SETTINGS) },
-                    onMicrophone = {
-                        if (!hasMicPermission) {
-                            requestMic.launch(Manifest.permission.RECORD_AUDIO)
-                        } else {
-                            runCatching {
-                                context.startActivity(Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                                    Uri.fromParts("package", context.packageName, null)))
-                            }
-                        }
-                    },
                     onAbout = { moveTo(Screen.ABOUT) },
                     onBack = { moveTo(settingsReturnScreen) }
                 )

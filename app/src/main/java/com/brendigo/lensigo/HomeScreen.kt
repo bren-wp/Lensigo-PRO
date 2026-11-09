@@ -126,11 +126,16 @@ internal fun LensigoHomeScreen(
                     .heightIn(min = 77.dp).padding(horizontal = horizontalPad),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                LensigoBrandMark(Modifier.size(if (tablet) 44.dp else 37.dp).clickable(
-                    onClickLabel = "O aplikaciji LENSIGO",
-                    role = Role.Button, onClick = onAbout
-                ))
-                Spacer(Modifier.width(10.dp))
+                Box(
+                    Modifier.size(48.dp).clickable(
+                        onClickLabel = "O aplikaciji LENSIGO",
+                        role = Role.Button, onClick = onAbout
+                    ),
+                    contentAlignment = Alignment.Center
+                ) {
+                    LensigoBrandMark(Modifier.size(if (tablet) 44.dp else 37.dp))
+                }
+                Spacer(Modifier.width(6.dp))
                 Column(Modifier.weight(1f)) {
                     Text("LENSIGO", color = White,
                         fontSize = if (fontScale >= 1.6f) 22.sp else 27.sp,

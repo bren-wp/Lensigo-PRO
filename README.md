@@ -52,7 +52,7 @@ Originalni korisnički referentni paket sadrži 19 mobilnih i 19 tabletnih konce
 
 - Kotlin + Jetpack Compose + AndroidX CameraX; MediaStore i Camera2 kompatibilne kontrole.
 - Uređivanje u pozadini, bez uploadanja slika; JPEG obrada ograničena na 2048–3072 px zbog memorije.
-- SD video postavljen kao prednost na slabijim uređajima; HD može biti nedostupan.
+- Kamera bira najvišu podržanu UHD/FHD/HD/SD razlučivost; SD je dostupna štedljiva opcija. Kombinacija 4K/60 FPS ovisi o senzoru i snimatelju.
 - Razdvojena jezgra: `FilterEngine.kt`, `MediaLibrary.kt`, `GalleryScreen.kt`, `MainActivity.kt`.
 - **Package** `com.brendigo.lensigo`, minSdk 24, targetSdk 36.
 
@@ -66,15 +66,15 @@ Gradle automatski regenerira `lensigo_launcher.png` prije izgradnje na lokalnom 
 
 GitHub Actions nakon **uspješnog** builda objavljuje novi preview Release s `app-debug.apk` (testni APK) i `app-release.aab` (nepotpisani bundle). Za produkcijsku objavu potreban je zaseban sigurni signing workflow i testiranje stvarnih uređaja.
 
-### 🧭 Ostalo u planu
+### 🧭 Trenutačne mogućnosti i otvorena ispitivanja
 
-Obrada EXIF metapodataka pri uređivanju, dodatni foto-alati, napredno panoramsko poravnanje, istodobno Dual video snimanje, segmentacija osobe u portretu, RAW/DNG, složenije postavke fokusa i višekadarski Night Mode za uređaje bez proizvođačkog dodatka i potpuni pixel-by-pixel audit 19 zaslona. Neaktivne funkcije nisu predstavljene kao gotove.
+Pro način koristi stvarni RAW+DNG na podržanim senzorima, Portrait koristi lokalnu segmentaciju osobe, a Panorama sadrži perspektivno podudaranje kadrova uz sigurni fallback. Potrebni su testovi tih funkcija na različitim Android senzorima, daljnji foto-alati, provjera istodobnog Dual videa i dokumentiranje stvarne pixel-diff usporedbe svih preostalih zaslona. Funkcije ovisne o uređaju nisu predstavljene kao univerzalno dostupne.
 
 ### 🔐 Privatnost i brending · 0.7.0
 
-**Zaslon 18 — Privatnost:** Brendigo boje, simbol objektiva, četiri informativne stavke (lokalna obrada, bez računa, kontrola datoteka i kontrola dozvola) te poveznica na **stvarne Android postavke dozvola**. Nema internetske dozvole ni prijenosa fotografija na poslužitelje.
+**Zasebni zaslon Privatnost je uklonjen:** privatnosne zaštite ostaju u implementaciji, a stanje pohrane i EXIF lokacije vidljivo je u Postavkama. Korisnik upravlja Android dozvolama putem sustava ili zahtjeva za dopuštenje u trenutku korištenja funkcije.
 
-**Zaslon 19 — O aplikaciji:** Brendirani LENSIGO wordmark, stvarna verzija iz `BuildConfig.VERSION_NAME`, prečac do `brendigo.com`, privatnost i stranica licenci. Na Androidu se poveznica na web otvara u vanjskom pregledniku; to ne zahtijeva internetsku dozvolu za samu kameru.
+**O aplikaciji:** brendirani LENSIGO wordmark, stvarna verzija iz `BuildConfig.VERSION_NAME`, prečac do `brendigo.com` i stranica licenci. Poveznica na web otvara se vanjskim preglednikom, bez ugrađene mrežne komunikacije kamere.
 
 **Stabilnost:** Samookidač se prekida pri odlasku sa zaslona ili promjeni načina snimanja. Dozvole se ponovno očitavaju po povratku iz postavki Androida. Galerija provjerava doslovan prefiks `LENSIGO_` i lokalni MediaStore direktorij na novijim Androidima; stariji Androidi koriste kompatibilni fallback. Dekodiranje sličica na starijim uređajima ograničeno je na manju veličinu slike.
 
