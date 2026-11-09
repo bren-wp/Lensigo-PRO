@@ -1281,11 +1281,15 @@ private fun LensigoApplication() {
                             Text(item.title, fontSize = 13.sp,
                                 fontWeight = if (mode == item) FontWeight.Bold else FontWeight.Normal,
                                 color = if (mode == item) Cyan else Muted,
-                                modifier = Modifier.clickable(
-                                    enabled = !isRecording && !processing,
-                                    role = Role.Button,
-                                    onClickLabel = "Odaberi način " + item.title
-                                ) { setMode(item) })
+                                // Expand the invisible touch target to the full
+                                // 51dp strip while preserving the visible label baseline.
+                                modifier = Modifier.fillMaxHeight()
+                                    .wrapContentHeight(Alignment.CenterVertically)
+                                    .clickable(
+                                        enabled = !isRecording && !processing,
+                                        role = Role.Button,
+                                        onClickLabel = "Odaberi način " + item.title
+                                    ) { setMode(item) })
                         }
                     }
                     Row(Modifier.fillMaxWidth().height(115.dp).background(Black)

@@ -26,6 +26,22 @@ class AdaptiveLauncherContract(unittest.TestCase):
         colors = ET.parse(ROOT / "app/src/main/res/values/colors.xml").getroot()
         self.assertEqual(colors.find("color").text.strip().upper(), "#071120")
 
+    def test_android_themed_icon_preserves_transparent_aperture(self):
+        adaptive = ET.parse(ROOT / "app/src/main/res/mipmap-anydpi-v26/lensigo_launcher.xml").getroot()
+        self.assertEqual(adaptive.find("monochrome").attrib[NS+"drawable"],
+                         "@drawable/lensigo_launcher_monochrome")
+        mono = ET.parse(ROOT / "app/src/main/res/drawable/lensigo_launcher_monochrome.xml").getroot()
+        self.assertEqual(mono.tag, "vector")
+        self.assertEqual(mono.attrib[NS+"viewportWidth"], "100")
+        self.assertEqual(mono.attrib[NS+"viewportHeight"], "100")
+        group = mono.find("group")
+        self.assertEqual(group.attrib[NS+"scaleX"], "0.6875")
+        self.assertEqual(group.attrib[NS+"scaleY"], "0.6875")
+        paths = mono.findall(".//path")
+        self.assertEqual(len(paths), 9)
+        self.assertTrue(all(p.attrib[NS+"fillColor"].upper() == "#FFFFFFFF" for p in paths))
+        self.assertEqual(sum(p.attrib.get(NS+"fillType") == "evenOdd" for p in paths), 2)
+
     def test_symbol_stays_in_safe_zone_and_legacy_pixels_are_unchanged(self):
         with tempfile.TemporaryDirectory() as temp:
             legacy = Path(temp) / "legacy.png"

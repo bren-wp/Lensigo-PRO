@@ -39,6 +39,16 @@ private val Accent = Color(0xFF00CFF7)
 private val Muted = Color(0xFF9CB3C4)
 private val White = Color(0xFFF8FBFF)
 
+internal enum class PermissionNextStep { CAMERA, STORAGE, CONTINUE }
+
+internal fun nextPermissionStep(
+    cameraGranted: Boolean, storageGranted: Boolean, storageRequired: Boolean
+): PermissionNextStep = when {
+    !cameraGranted -> PermissionNextStep.CAMERA
+    storageRequired && !storageGranted -> PermissionNextStep.STORAGE
+    else -> PermissionNextStep.CONTINUE
+}
+
 @Composable
 fun LensigoSplash() {
     BoxWithConstraints(
@@ -272,11 +282,24 @@ fun LensigoPermissions(
                 }
             }
             Spacer(if (compact) Modifier.height(8.dp) else Modifier.weight(1f))
-            Button(onClick = onContinue,
+            val nextStep = nextPermissionStep(
+                cameraGranted, storageGranted, storageRequired
+            )
+            Button(onClick = {
+                when (nextStep) {
+                    PermissionNextStep.CAMERA -> onCamera()
+                    PermissionNextStep.STORAGE -> onStorage()
+                    PermissionNextStep.CONTINUE -> onContinue()
+                }
+            },
                 modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0984AD))) {
-                Text("Nastavi na kameru", fontWeight = FontWeight.Bold)
+                Text(when (nextStep) {
+                    PermissionNextStep.CAMERA -> "Dopusti pristup kameri"
+                    PermissionNextStep.STORAGE -> "Dopusti spremanje fotografija"
+                    PermissionNextStep.CONTINUE -> "Nastavi na kameru"
+                }, fontWeight = FontWeight.Bold)
             }
         }
     }
