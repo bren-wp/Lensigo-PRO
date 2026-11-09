@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Android 12+ also draws a system starting window before the Compose
+         splash. Explicitly use the same dark brand backing on both surfaces. -->
+    <style name="Theme.Lensigo" parent="android:style/Theme.Material.NoActionBar">
+        <item name="android:windowBackground">@color/lensigo_launcher_background</item>
+        <item name="android:statusBarColor">@android:color/black</item>
+        <item name="android:navigationBarColor">@android:color/black</item>
+        <item name="android:windowLightStatusBar">false</item>
+        <item name="android:windowSplashScreenBackground">@color/lensigo_launcher_background</item>
+        <item name="android:windowSplashScreenIconBackgroundColor">@color/lensigo_launcher_background</item>
+        <item name="android:windowSplashScreenAnimatedIcon">@drawable/lensigo_launcher_foreground</item>
+    </style>
+</resources>

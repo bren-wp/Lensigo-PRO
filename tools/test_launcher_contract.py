@@ -26,6 +26,25 @@ class AdaptiveLauncherContract(unittest.TestCase):
         colors = ET.parse(ROOT / "app/src/main/res/values/colors.xml").getroot()
         self.assertEqual(colors.find("color").text.strip().upper(), "#071120")
 
+    def test_native_starting_window_has_no_white_splash_plate(self):
+        manifest = ET.parse(ROOT / "app/src/main/AndroidManifest.xml").getroot()
+        app = manifest.find("application")
+        self.assertEqual(app.attrib[NS+"theme"], "@style/Theme.Lensigo")
+        for directory in ("values", "values-v31"):
+            theme = ET.parse(ROOT / f"app/src/main/res/{directory}/styles.xml").getroot()
+            style = theme.find("style")
+            self.assertEqual(style.attrib["name"], "Theme.Lensigo")
+            values = {item.attrib["name"]: item.text for item in style.findall("item")}
+            self.assertEqual(values["android:windowBackground"],
+                             "@color/lensigo_launcher_background")
+            if directory == "values-v31":
+                self.assertEqual(values["android:windowSplashScreenBackground"],
+                                 "@color/lensigo_launcher_background")
+                self.assertEqual(values["android:windowSplashScreenIconBackgroundColor"],
+                                 "@color/lensigo_launcher_background")
+                self.assertEqual(values["android:windowSplashScreenAnimatedIcon"],
+                                 "@drawable/lensigo_launcher_foreground")
+
     def test_android_themed_icon_preserves_transparent_aperture(self):
         adaptive = ET.parse(ROOT / "app/src/main/res/mipmap-anydpi-v26/lensigo_launcher.xml").getroot()
         self.assertEqual(adaptive.find("monochrome").attrib[NS+"drawable"],

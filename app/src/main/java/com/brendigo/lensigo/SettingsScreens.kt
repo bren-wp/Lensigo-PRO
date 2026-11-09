@@ -17,6 +17,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.semantics.Role
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -68,6 +69,7 @@ private fun SettingsItem(
     onClick: (() -> Unit)? = null,
     onToggle: ((Boolean) -> Unit)? = null
 ) {
+    val fontScale = LocalDensity.current.fontScale
     Row(
         Modifier.fillMaxWidth().heightIn(min = 48.dp)
             .then(when {
@@ -106,7 +108,13 @@ private fun SettingsItem(
                     disabledUncheckedThumbColor = White))
         } else if (value != null) {
             Text(value, color = Muted, fontSize = 11.sp, textAlign = TextAlign.End,
-                maxLines = 2, overflow = TextOverflow.Ellipsis)
+                // At large accessibility font sizes, allow values to wrap
+                // instead of collapsing the action label on narrow phones.
+                modifier = Modifier.widthIn(
+                    max = if (fontScale >= 1.3f) 104.dp else 136.dp
+                ),
+                maxLines = if (fontScale >= 1.3f) 4 else 2,
+                overflow = TextOverflow.Ellipsis)
         } else if (onClick != null) {
             Icon(Icons.Default.ChevronRight, null, tint = Muted,
                 modifier = Modifier.size(17.dp))
