@@ -11,10 +11,7 @@ import android.os.CancellationSignal
 import android.provider.MediaStore
 import android.net.Uri
 import android.util.Size
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.withContext
 import java.io.File
-import java.io.FileInputStream
 import java.io.IOException
 
 data class LensMedia(val uri: Uri, val isVideo: Boolean, val timestamp: Long)
@@ -29,7 +26,13 @@ object MediaLibrary {
         for ((source, video) in sources) {
             val date = MediaStore.MediaColumns.DATE_ADDED
             val name = MediaStore.MediaColumns.DISPLAY_NAME
-            val projection = arrayOf(MediaStore.MediaColumns._ID, date, name)
+            // A filename is not an ownership check. On Android 10+, show only
+            // records whose contributing package is this application.
+            val ownerColumnName = if (Build.VERSION.SDK_INT >= 29)
+                MediaStore.MediaColumns.OWNER_PACKAGE_NAME else null
+            val projection = if (ownerColumnName != null)
+                arrayOf(MediaStore.MediaColumns._ID, date, name, ownerColumnName)
+                else arrayOf(MediaStore.MediaColumns._ID, date, name)
             val relativeDirectory = if (video) "Movies/LENSIGO/" else "Pictures/LENSIGO/"
             val where = if (Build.VERSION.SDK_INT >= 29)
                 name + " LIKE ? AND " + MediaStore.MediaColumns.RELATIVE_PATH + " = ?"
@@ -43,10 +46,16 @@ object MediaLibrary {
                         val id = cursor.getColumnIndexOrThrow(MediaStore.MediaColumns._ID)
                         val time = cursor.getColumnIndexOrThrow(date)
                         val display = cursor.getColumnIndexOrThrow(name)
+                        val ownerIndex = ownerColumnName?.let(cursor::getColumnIndex)
+                        // When ownership is available, missing data fails closed.
+                        if (ownerColumnName != null && (ownerIndex == null || ownerIndex < 0))
+                            return@use
                         while (cursor.moveToNext()) {
                             // LIKE treats '_' as a wildcard, so verify the literal prefix.
                             val filename = cursor.getString(display) ?: continue
                             if (!filename.startsWith("LENSIGO_")) continue
+                            if (ownerIndex != null && ownerIndex >= 0 &&
+                                cursor.getString(ownerIndex) != context.packageName) continue
                             result.add(LensMedia(
                                 ContentUris.withAppendedId(source, cursor.getLong(id)),
                                 video, cursor.getLong(time)
@@ -119,41 +128,36 @@ object MediaLibrary {
             ?: throw IOException("Nije moguće kreirati fotografiju")
         try {
             resolver.openOutputStream(uri, "w")?.use { output ->
-                if (look.isNeutral) {
-                    FileInputStream(file).use { input -> input.copyTo(output) }
-                } else {
-                    val bitmap = FilterEngine.decode(file, if (look.portraitBlur > 0f) 1600 else if (lowMemory) 2048 else 3072)
-                    val edited = try { FilterEngine.apply(bitmap, look) } finally { bitmap.recycle() }
+                // Neutral captures must also respect the JPEG quality slider.
+                // Re-encoding removes source EXIF, including possible location
+                // and device metadata, rather than copying opaque camera bytes.
+                val bitmap = FilterEngine.decode(file,
+                    if (look.portraitBlur > 0f) 1600 else if (lowMemory) 2048 else 3072)
+                try {
+                    val result = if (look.isNeutral) bitmap else FilterEngine.apply(bitmap, look)
                     try {
-                        if (!edited.compress(Bitmap.CompressFormat.JPEG, quality, output)) {
+                        if (!result.compress(Bitmap.CompressFormat.JPEG,
+                                quality.coerceIn(70, 100), output)) {
                             throw IOException("JPEG kodiranje nije uspjelo")
                         }
-                    } finally { edited.recycle() }
+                    } finally {
+                        if (result !== bitmap && !result.isRecycled) result.recycle()
+                    }
+                } finally {
+                    if (!bitmap.isRecycled) bitmap.recycle()
                 }
             } ?: throw IOException("Nije moguće pisati fotografiju")
             if (Build.VERSION.SDK_INT >= 29) {
-                resolver.update(uri, ContentValues().apply {
+                if (resolver.update(uri, ContentValues().apply {
                     put(MediaStore.MediaColumns.IS_PENDING, 0)
-                }, null, null)
+                }, null, null) != 1) throw IOException("Objava fotografije nije uspjela")
             }
             return uri
         } catch (e: Exception) {
-            resolver.delete(uri, null, null)
+            runCatching { resolver.delete(uri, null, null) }
             throw e
         }
     }
-
-    suspend fun saveEdited(context: Context, uri: Uri,
-                           look: PhotoLook, quality: Int, lowMemory: Boolean): Uri =
-        withContext(Dispatchers.IO) {
-            val file = File.createTempFile("lensigo_edit_", ".jpg", context.cacheDir)
-            try {
-                context.contentResolver.openInputStream(uri)?.use { input ->
-                    file.outputStream().use { output -> input.copyTo(output) }
-                } ?: throw IOException("Datoteka nije dostupna")
-                saveImage(context, file, look, quality, lowMemory)
-            } finally { file.delete() }
-        }
 
     /** Saves composed images atomically in MediaStore, with cleanup on any failure. */
     fun saveBitmap(context: Context, image: Bitmap, prefix: String, quality: Int): Uri {
@@ -177,13 +181,14 @@ object MediaLibrary {
                 }
             } ?: throw IOException("Nije moguće pisati izlaznu fotografiju")
             if (Build.VERSION.SDK_INT >= 29) {
-                resolver.update(destination, ContentValues().apply {
+                if (resolver.update(destination, ContentValues().apply {
                     put(MediaStore.MediaColumns.IS_PENDING, 0)
-                }, null, null)
+                }, null, null) != 1)
+                    throw IOException("Objava fotografije nije uspjela")
             }
             return destination
         } catch (e: Exception) {
-            resolver.delete(destination, null, null)
+            runCatching { resolver.delete(destination, null, null) }
             throw e
         }
     }
