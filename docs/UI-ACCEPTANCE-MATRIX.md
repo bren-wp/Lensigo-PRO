@@ -1,8 +1,10 @@
-# LENSIGO — acceptance matrix for all 38 reference screens
+# LENSIGO — acceptance matrix for 36 active screens
 
 This pipeline **never claims 1:1 without an emulator or a physical device**.
-It requires 19 genuine application screenshots for the 1080×2400 mobile
-reference and 19 for the 1600×2560 tablet reference.
+There are 19 original source references per device. The dedicated Privacy
+screen (18_privacy) was removed on user request, so the current app has
+**18 active layouts per device**: 36 actual captures for 36 matching references.
+Original Privacy PNGs remain archival references, not required screenshots.
 
 ## Collect screenshots (local Android SDK + device required)
 
@@ -29,7 +31,7 @@ python tools/ui_acceptance_matrix.py \
 ```
 
 Outputs: `audit/acceptance.json`, `audit/largest_deviations.csv`, both
-device summaries, and 38 full-resolution pixel-diff PNG files.
+device summaries, and 36 full-resolution pixel-diff PNG files.
 
 If screenshots are missing, mismatched in size, or otherwise unreadable,
 the audit **fails**. Largest-deviation rankings are calculated only for

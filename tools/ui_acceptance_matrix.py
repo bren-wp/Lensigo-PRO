@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Rank pixel deviations for all 19 phone + 19 tablet screenshots.
+"""Rank pixel deviations for all 18 active phone + 18 tablet screenshots.
 
 This does not fabricate emulator captures, silently resize them, or mask
 active UI. Missing/invalid images remain failures, not zero-percent errors.
@@ -40,9 +40,9 @@ def analyze(reference_root: Path, actual_root: Path, output_root: Path) -> dict:
         writer.writerows(rankings)
     verified=all(x["all_screens_identical"] for x in per_device.values())
     result={
-        "expected":38,
+        "expected":36,
         "compared":len(rankings),
-        "all_38_pixel_identical":verified,
+        "all_36_pixel_identical":verified,
         "devices":per_device,
         "largest_deviations":rankings[:10],
         "note":"Camera scene pixels differ naturally. Compare deterministic UI regions "
@@ -62,7 +62,7 @@ def main():
     a=p.parse_args()
     result=analyze(a.reference_root,a.actual_root,a.output_root)
     print(json.dumps(result,ensure_ascii=False,indent=2))
-    if not result["all_38_pixel_identical"]:raise SystemExit(1)
+    if not result["all_36_pixel_identical"]:raise SystemExit(1)
 
 
 if __name__=="__main__":main()

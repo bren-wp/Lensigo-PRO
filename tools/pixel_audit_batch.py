@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Deterministic 19-screen mobile/tablet audit; never substitutes concept art for real screenshots."""
+"""Deterministic 18-screen mobile/tablet audit; never substitutes concept art for real screenshots."""
 import argparse
 import json
 from pathlib import Path
@@ -10,7 +10,7 @@ SCREENS = (
     "04_home.png", "05_photo.png", "06_video.png", "07_pro.png",
     "08_night.png", "09_portrait.png", "10_panorama.png", "11_dual.png",
     "12_filters.png", "13_gallery.png", "14_viewer.png", "15_editor.png",
-    "16_settings.png", "17_camera-settings.png", "18_privacy.png",
+    "16_settings.png", "17_camera-settings.png",
     "19_about.png"
 )
 

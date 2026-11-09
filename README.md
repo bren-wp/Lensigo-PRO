@@ -86,7 +86,7 @@ Pro način koristi stvarni RAW+DNG na podržanim senzorima, Portrait koristi lok
 
 ### 📋 Matrica uređaja i 1:1 provjera
 
-[Popis testova Android uređaja, svih 19 mobilnih i 19 tabletnih ekrana](docs/DEVICE-TEST-MATRIX.md). Vizualne razlike mjere se uz usklađenu rezoluciju i izvorni sadržaj scene. Screenshotovi korisničkih dizajnerskih koncepata nisu predstavljeni kao stvarne snimke aplikacije.
+[Popis testova Android uređaja, svih 18 aktivnih mobilnih i 18 aktivnih tabletnih ekrana](docs/DEVICE-TEST-MATRIX.md). Vizualne razlike mjere se uz usklađenu rezoluciju i izvorni sadržaj scene. Screenshotovi korisničkih dizajnerskih koncepata nisu predstavljeni kao stvarne snimke aplikacije.
 
 ## 🧩 Novosti 0.7.0 — Google Play i UI
 

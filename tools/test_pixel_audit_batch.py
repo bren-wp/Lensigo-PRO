@@ -1,4 +1,4 @@
-"""Checks 19-reference completeness and honest failure reporting."""
+"""Checks 18-active-screen completeness and honest failure reporting."""
 import tempfile
 import unittest
 from pathlib import Path
@@ -15,8 +15,13 @@ class BatchPixelAuditTest(unittest.TestCase):
             Image.new("RGB", (10, 20), (0, 20, 30)).save(root / "actual" / SCREENS[0])
             report = run(root / "ref", root / "actual", root / "out")
             self.assertEqual(report["checked"], 1)
-            self.assertEqual(len(report["missing"]), 18)
+            self.assertEqual(len(report["missing"]), 17)
             self.assertFalse(report["all_screens_identical"])
+
+    def test_removed_privacy_screen_is_not_required(self):
+        self.assertEqual(len(SCREENS), 18)
+        self.assertNotIn("18_privacy.png", SCREENS)
+        self.assertIn("19_about.png", SCREENS)
 
     def test_all_matching_screens_pass(self):
         with tempfile.TemporaryDirectory() as directory:
@@ -26,7 +31,7 @@ class BatchPixelAuditTest(unittest.TestCase):
                 for screen in SCREENS:
                     Image.new("RGB", (10, 20), (1, 30, 80)).save(root / name / screen)
             report = run(root / "ref", root / "actual", root / "out")
-            self.assertEqual(report["identical"], 19)
+            self.assertEqual(report["identical"], 18)
             self.assertTrue(report["all_screens_identical"])
 
     def test_real_difference_is_not_reported_as_identical(self):
@@ -38,7 +43,7 @@ class BatchPixelAuditTest(unittest.TestCase):
                     color = (50, 60, 70) if name == "ref" else (51, 60, 70)
                     Image.new("RGB", (10, 20), color).save(root / name / screen)
             report = run(root / "ref", root / "actual", root / "out")
-            self.assertEqual(report["checked"], 19)
+            self.assertEqual(report["checked"], 18)
             self.assertFalse(report["all_screens_identical"])
 
 if __name__ == "__main__":

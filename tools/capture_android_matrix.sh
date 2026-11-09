@@ -12,7 +12,7 @@ mkdir -p "$root"
 screens=(01_splash 02_onboarding 03_permissions 04_home 05_photo 06_video
   07_pro 08_night 09_portrait 10_panorama 11_dual 12_filters
   13_gallery 14_viewer 15_editor 16_settings 17_camera-settings
-  18_privacy 19_about)
+  19_about)
 echo "Prepare the $device emulator/device, reference font scale, density and system bars."
 echo "Capture only real Android application screens, not design mockups."
 for screen in "${screens[@]}"; do
@@ -21,4 +21,4 @@ for screen in "${screens[@]}"; do
   test -s "$root/$screen.png"
   echo "Saved $root/$screen.png"
 done
-echo "All 19 captures saved in $root"
+echo "All 18 active-screen captures saved in $root"

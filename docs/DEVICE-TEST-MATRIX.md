@@ -9,15 +9,15 @@ The feature is **not considered device-tested** just because it compiles.
 | Android 10 / API 29 | MediaStore owner paths, deleting owned media, app preferences | Not run |
 | Android 12 / API 31 | camera live effects, Night/Bokeh extensions only when supported | Not run |
 | Android 13–16 / API 33–36 | scoped media, edge-to-edge bars, system permission roundtrip | Not run |
-| 1080 × 2400 pixel phone | compare 19 screens to `izvoz/mobitel` | No screenshots yet |
-| 1600 × 2560 pixel tablet | compare 19 screens to `izvoz/tablet` | No screenshots yet |
+| 1080 × 2400 pixel phone | compare 18 active screens to `izvoz/mobitel`; original 18_privacy archived | No screenshots yet |
+| 1600 × 2560 pixel tablet | compare 18 active screens to `izvoz/tablet`; original 18_privacy archived | No screenshots yet |
 | Landscape and large text | scrollability, no truncated buttons, 1.3×/2× font scaling | Not run |
 
 ## Screens 18 and 19
 
 - Privacy: no separate screen; confirm Camera/Settings permission states and offline storage remain operational.
-- About: centered symbol / LENSIGO wordmark, four rows (app name, website, privacy, licences), copyright and version.
-- Buttons are wired to Android application settings, in-app privacy / licence information, or browser via ACTION_VIEW.
+- About: centered symbol / LENSIGO wordmark, four rows (app name, website, real version, licences), copyright and version.
+- Buttons are wired to Android application settings, licence information, or the external browser via ACTION_VIEW.
 - All screen copies use meaningful icons and avoid representing future features as complete.
 
 ## Security and stability checks
