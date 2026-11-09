@@ -40,7 +40,7 @@ Mreža trećina preko live previewa, samookidač 3/5/10 s i opcionalni zvuk okid
 
 <p align="center"><img src="branding/lensigo-icon.svg" alt="LENSIGO aperture" width="150"></p>
 
-**Launch ikona — izvorni pikseli:** GitHub Actions prije Gradle builda pokreće `tools/generate_launcher.py` i generira originalni 512 × 512 PNG u `drawable-nodpi/lensigo_launcher.png`. Izlaz je lokalno uspoređen s korisnikovom referencom i daje **identična 262.144 RGB piksela** (SHA-256 `96538ced13ae75393f3feed7a06866a5d9f72f59e35d359c10dc67cca958e2df`). Gradle build pada ako SHA nije točan. To potvrđuje izvorni sadržaj ikone, ne izgled Androidova maskiranja na različitim launcherima.
+**Launch ikona — izvorni pikseli:** GitHub Actions prije Gradle builda pokreće `tools/generate_launcher.py` i generira originalni 512 × 512 PNG u `mipmap-nodpi/lensigo_launcher.png`. Izlaz je lokalno uspoređen s korisnikovom referencom i daje **identična 262.144 RGB piksela** (SHA-256 `96538ced13ae75393f3feed7a06866a5d9f72f59e35d359c10dc67cca958e2df`). Gradle build pada ako SHA nije točan. To potvrđuje izvorni sadržaj ikone, ne izgled Androidova maskiranja na različitim launcherima.
 
 **Graphite** `#081827` · **Midnight** `#10364C` · **Cyan** `#00D4FF` · **Blue** `#2E83FF` · **White** `#F5FAFF`.
 
@@ -98,3 +98,10 @@ Obrada EXIF metapodataka pri uređivanju, dodatni foto-alati, napredno panoramsk
 - **Važno:** ni Build Success ni sličnost UI koda ne potvrđuju svaki zaslon pixel-po-pixel 1:1. Za Google Play potrebni su potpisani AAB, stvarno testiranje, Play Console izjave i pregled pravila.
 
 [Usklađenost s Google Playem](docs/GOOGLE-PLAY-2026.md) · [Pixel audit za sve zaslone](docs/PIXEL-AUDIT.md) · [Matrica uređaja](docs/DEVICE-TEST-MATRIX.md)
+
+
+### Adaptive launch ikona (Android 8+)
+
+LENSIGO sada koristi pravi **adaptive icon** (`mipmap-anydpi-v26/lensigo_launcher.xml`) za kružne, squircle i druge OEM maske: tamna `#071120` pozadina pokriva cijelu masku, a **originalni odobreni simbol** iz `tools/generate_launcher.py` izrađuje se kao proziran 512px foreground unutar Androidove središnje sigurne zone. Time se uklanja sistemski bijeli okvir koji neki launcheri dodaju kada je dostupan samo starinski PNG. Za Android 7 ostaje originalni checksumom verificirani 512px `mipmap-nodpi` PNG. Proporcije logotipa u stvarnom sustavskom launcheru i dalje ovise o OEM maski i trebaju provjeru na Pixel, Samsung, Xiaomi i drugim uređajima.
+
+Zasebni ekran **Privatnost** uklonjen je na zahtjev vlasnika aplikacije. Android dozvole, lokalno spremanje i stvarne zaštite privatnosti **nisu uklonjene**; osnovni podaci ostaju unutar odgovarajućih postavki. Zaslon O aplikaciji prikazuje stvarnu verziju aplikacije umjesto zastarjelog dizajnerskog teksta.

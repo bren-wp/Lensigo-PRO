@@ -21,7 +21,8 @@ jobs:
       - name: Generate pixel-exact LENSIGO launcher from approved source
         run: |
           python -m pip install --quiet Pillow==12.3.0 numpy==2.3.5 CairoSVG==2.8.2
-          python tools/generate_launcher.py app/src/main/res/drawable-nodpi/lensigo_launcher.png
+          python tools/generate_launcher.py app/src/main/res/mipmap-nodpi/lensigo_launcher.png \
+            --adaptive-foreground app/src/main/res/drawable-nodpi/lensigo_launcher_foreground.png
       - name: Audit all user-visible Android text
         run: python tools/audit_public_ui.py
       - name: Audit Android security and privacy contracts

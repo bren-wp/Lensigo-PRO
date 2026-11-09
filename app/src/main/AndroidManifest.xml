@@ -7,8 +7,8 @@
     <application
         android:theme="@android:style/Theme.Material.NoActionBar"
         android:label="LENSIGO Pro Camera"
-        android:icon="@drawable/lensigo_launcher"
-        android:roundIcon="@drawable/lensigo_launcher"
+        android:icon="@mipmap/lensigo_launcher"
+        android:roundIcon="@mipmap/lensigo_launcher"
         android:usesCleartextTraffic="false"
         android:allowBackup="false">
         <activity android:name=".MainActivity"

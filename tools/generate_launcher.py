@@ -55,10 +55,38 @@ def render(path):
         raise RuntimeError("Icon pixels differ from approved 512px original: " + digest)
     path.parent.mkdir(parents=True,exist_ok=True)
     background.save(path)
-    print("LENSIGO launcher OK: pixel-exact, " + digest)
+    print("LENSIGO legacy launcher OK: original 512px pixels, " + digest)
+
+
+def render_adaptive_foreground(path):
+    """The exact approved aperture, centered inside Android's safe zone.
+
+    Android 8+ launcher masks differ (circle, squircle, OEM), so the foreground
+    must be transparent and contained within the central 66.7% safe zone.
+    The full icon background is supplied by adaptive-icon XML, never a white
+    OEM fallback plate around the legacy rectangle.
+    """
+    size = 512
+    symbol_size = 352  # 68.75% canvas; aperture itself occupies 84%.
+    raster = Image.open(io.BytesIO(cairosvg.svg2png(
+        bytestring=SYMBOL.encode(), output_width=symbol_size,
+        output_height=symbol_size
+    ))).convert("RGBA")
+    foreground = Image.new("RGBA", (size, size), (0, 0, 0, 0))
+    foreground.alpha_composite(raster, ((size-symbol_size)//2, (size-symbol_size)//2))
+    box = foreground.getbbox()
+    if box is None or min(box[0], box[1]) < 86 or max(box[2], box[3]) > 426:
+        raise RuntimeError("Adaptive icon aperture exceeds the launcher safe zone: " + str(box))
+    path.parent.mkdir(parents=True,exist_ok=True)
+    foreground.save(path)
+    print("LENSIGO adaptive foreground OK, bounds", box)
+
 
 if __name__ == "__main__":
     ap = argparse.ArgumentParser()
     ap.add_argument("output", type=Path)
+    ap.add_argument("--adaptive-foreground", type=Path)
     args = ap.parse_args()
     render(args.output)
+    if args.adaptive_foreground:
+        render_adaptive_foreground(args.adaptive_foreground)

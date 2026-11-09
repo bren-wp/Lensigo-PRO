@@ -50,8 +50,13 @@ val generateLensigoLauncher by tasks.registering(Exec::class) {
     description = "Regenerates the approved 512px launch icon"
     workingDir = rootProject.projectDir
     commandLine("python", "tools/generate_launcher.py",
-        "app/src/main/res/drawable-nodpi/lensigo_launcher.png")
+        "app/src/main/res/mipmap-nodpi/lensigo_launcher.png",
+        "--adaptive-foreground",
+        "app/src/main/res/drawable-nodpi/lensigo_launcher_foreground.png")
     inputs.file(rootProject.file("tools/generate_launcher.py"))
-    outputs.file(file("src/main/res/drawable-nodpi/lensigo_launcher.png"))
+    outputs.files(
+        file("src/main/res/mipmap-nodpi/lensigo_launcher.png"),
+        file("src/main/res/drawable-nodpi/lensigo_launcher_foreground.png")
+    )
 }
 tasks.named("preBuild").configure { dependsOn(generateLensigoLauncher) }
