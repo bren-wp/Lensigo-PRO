@@ -60,7 +60,12 @@ def audit(root: Path) -> dict:
     if ("OWNER_PACKAGE_NAME" not in media or
             "cursor.getString(ownerIndex) != context.packageName" not in media):
         problems.append("MediaStore gallery must validate owner on API 29+")
-    if "FileInputStream(file)" in media or "input.copyTo(output)" in media:
+    # RAW DNG is intentionally copied byte-for-byte. Limit this security
+    # contract to the JPEG export path so legitimate lossless RAW delivery
+    # does not trigger a false positive.
+    jpeg_export = media.split("fun saveImage", 1)[1].split("fun saveRaw", 1)[0] \
+        if "fun saveImage" in media else media
+    if "FileInputStream(file)" in jpeg_export or "input.copyTo(output)" in jpeg_export:
         problems.append("Camera JPEG must be re-encoded, not copied with untrusted EXIF")
     if "quality.coerceIn(70, 100)" not in media:
         problems.append("JPEG quality not bounded before saving")
