@@ -28,7 +28,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 /**
- * Matches the user's 18_privacy / 19_about brand references.
+ * Matches the About brand reference; Privacy is not a separate screen.
  * Fixed maximum content width keeps phone and tablet typography readable;
  * vertical scrolling and dynamic row heights avoid clipping with large fonts.
  */
@@ -93,67 +93,10 @@ private fun ThinDivider() {
 }
 
 @Composable
-fun LensigoPrivacyScreen(
-    onBack: () -> Unit,
-    onSettings: () -> Unit,
-    onPermissions: () -> Unit
-) {
-    Column(Modifier.fillMaxSize().background(LensigoReferenceBackground)) {
-        InfoHeader("Privatnost", onBack, onSettings)
-        Column(Modifier.fillMaxWidth().weight(1f).verticalScroll(rememberScrollState())
-            .padding(horizontal = 18.dp), horizontalAlignment = Alignment.CenterHorizontally) {
-            Column(Modifier.widthIn(max = 540.dp)) {
-                Spacer(Modifier.height(26.dp))
-                Text("Tvoje snimke.\nTvoja pravila.", color = White,
-                    fontSize = 27.sp, lineHeight = 30.sp, fontWeight = FontWeight.Bold)
-                Spacer(Modifier.height(18.dp))
-                LensigoBrandMark(modifier = Modifier.size(
-                    if (LocalConfiguration.current.screenWidthDp >= 600) 64.dp else 52.dp
-                ).align(Alignment.CenterHorizontally))
-                Spacer(Modifier.height(10.dp))
-                Text("Privatnost prije svega", fontWeight = FontWeight.Bold,
-                    fontSize = 20.sp, color = White, modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center)
-                Text("Kontrola je u tvojim rukama.", color = Secondary,
-                    fontSize = 13.sp, modifier = Modifier.fillMaxWidth(),
-                    textAlign = TextAlign.Center)
-                Spacer(Modifier.height(30.dp))
-                InfoGroup {
-                    InfoLine(Icons.Default.CloudOff, "Lokalna obrada",
-                        "Fotografije ostaju na uređaju")
-                    ThinDivider()
-                    InfoLine(Icons.Default.Lock, "Bez obveznog računa",
-                        "Koristi kameru bez registracije")
-                    ThinDivider()
-                    InfoLine(Icons.Default.Folder, "Kontrola datoteka",
-                        "Pregled i brisanje snimki")
-                    ThinDivider()
-                    InfoLine(Icons.Default.VerifiedUser, "Kontrola dozvola",
-                        "Samo potrebna dopuštenja", "Otvori", onPermissions)
-                }
-                Spacer(Modifier.height(28.dp))
-                val infoShape = RoundedCornerShape(12.dp)
-                Column(Modifier.fillMaxWidth()
-                    .background(Color(0xFF0B354D), infoShape)
-                    .border(1.dp, Color(0xFF367897), infoShape)
-                    .padding(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
-                    Text("Vizualni koncept sigurnosnih opcija.",
-                        fontWeight = FontWeight.SemiBold, fontSize = 14.sp, color = White)
-                    Text("Stvarna svojstva potvrđuju se testiranjem Android implementacije.",
-                        color = Secondary, fontSize = 12.sp, lineHeight = 17.sp)
-                }
-                Spacer(Modifier.height(26.dp))
-            }
-        }
-    }
-}
-
-@Composable
 fun LensigoAboutScreen(
     version: String,
     onBack: () -> Unit,
     onSettings: () -> Unit,
-    onPrivacy: () -> Unit,
     onLicences: () -> Unit,
     onWebsite: () -> Unit
 ) {
@@ -180,7 +123,7 @@ fun LensigoAboutScreen(
                 Text("B Y   B R E N D I G O", color = Secondary,
                     fontWeight = FontWeight.Bold, fontSize = 10.sp)
                 Spacer(Modifier.height(26.dp))
-                Text("Koncept Android dizajna", color = Secondary,
+                Text("Verzija $version", color = Secondary,
                     fontSize = 12.sp)
                 Spacer(Modifier.height(44.dp))
                 InfoGroup {
@@ -190,8 +133,8 @@ fun LensigoAboutScreen(
                     InfoLine(Icons.Default.Public, "Web-stranica",
                         "", detail = "brendigo.com", onClick = onWebsite)
                     ThinDivider()
-                    InfoLine(Icons.Default.VerifiedUser, "Privatnost i sigurnost",
-                        "", detail = "Pregledaj", onClick = onPrivacy)
+                    InfoLine(Icons.Default.VerifiedUser, "Verzija aplikacije",
+                        "", detail = version)
                     ThinDivider()
                     InfoLine(Icons.Default.Description, "Licence i zahvale",
                         "", detail = "Pregledaj", onClick = onLicences)
@@ -199,7 +142,7 @@ fun LensigoAboutScreen(
                 Spacer(Modifier.height(65.dp))
                 Text("Svaki kadar. Tvoja priča.", color = White, fontSize = 14.sp)
                 Spacer(Modifier.height(18.dp))
-                Text("© 2026 Brendigo · Vizualni koncept",
+                Text("© 2026 Brendigo",
                     color = Secondary, fontSize = 11.sp)
                 Spacer(Modifier.height(24.dp))
             }

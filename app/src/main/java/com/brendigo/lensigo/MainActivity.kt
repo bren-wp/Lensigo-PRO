@@ -99,7 +99,7 @@ private val Blue = Color(0xFF2E83FF)
 private val Muted = Color(0xFF9DB5C4)
 private val White = Color(0xFFF7FCFF)
 
-private enum class Screen { SPLASH, WELCOME, PERMISSIONS, HOME, CAMERA, GALLERY, VIEWER, SETTINGS, CAMERA_SETTINGS, PRIVACY, ABOUT, LICENCES }
+private enum class Screen { SPLASH, WELCOME, PERMISSIONS, HOME, CAMERA, GALLERY, VIEWER, SETTINGS, CAMERA_SETTINGS, ABOUT, LICENCES }
 internal enum class CameraMode(val title: String) {
     VIDEO("VIDEO"), PHOTO("FOTO"), PRO("PRO"), NIGHT("NOĆ"),
     PORTRAIT("PORTRET"), PANORAMA("PANORAMA"), DUAL("DUAL"), FILTERS("FILTERI")
@@ -169,7 +169,6 @@ private fun LensigoApplication() {
         screen = if (prefs.getBoolean("onboarded", false)) Screen.CAMERA else Screen.WELCOME
     }
     var mode by remember { mutableStateOf(CameraMode.PHOTO) }
-    var privacyReturnScreen by remember { mutableStateOf(Screen.SETTINGS) }
     var settingsReturnScreen by remember { mutableStateOf(Screen.CAMERA) }
     var aboutReturnScreen by remember { mutableStateOf(Screen.SETTINGS) }
     var galleryReturnScreen by remember { mutableStateOf(Screen.CAMERA) }
@@ -940,13 +939,13 @@ private fun LensigoApplication() {
             countdown = 0
         }
         if (next == Screen.SETTINGS && screen !in setOf(
-            Screen.SETTINGS, Screen.CAMERA_SETTINGS, Screen.PRIVACY,
+            Screen.SETTINGS, Screen.CAMERA_SETTINGS,
             Screen.ABOUT, Screen.LICENCES
         )) {
             settingsReturnScreen = screen
         }
         if (next == Screen.ABOUT && screen !in setOf(
-            Screen.ABOUT, Screen.PRIVACY, Screen.LICENCES
+            Screen.ABOUT, Screen.LICENCES
         )) {
             aboutReturnScreen = screen
         }
@@ -968,7 +967,6 @@ private fun LensigoApplication() {
             Screen.SETTINGS -> moveTo(settingsReturnScreen)
             Screen.VIEWER -> moveTo(Screen.GALLERY)
             Screen.CAMERA_SETTINGS -> moveTo(Screen.SETTINGS)
-            Screen.PRIVACY -> moveTo(privacyReturnScreen)
             Screen.ABOUT -> moveTo(aboutReturnScreen)
             Screen.LICENCES -> moveTo(Screen.ABOUT)
             else -> Unit
@@ -1419,10 +1417,6 @@ private fun LensigoApplication() {
                             }
                         }
                     },
-                    onPrivacy = {
-                        privacyReturnScreen = Screen.SETTINGS
-                        moveTo(Screen.PRIVACY)
-                    },
                     onAbout = { moveTo(Screen.ABOUT) },
                     onBack = { moveTo(settingsReturnScreen) }
                 )
@@ -1487,27 +1481,10 @@ private fun LensigoApplication() {
                     },
                     onBack = { moveTo(Screen.SETTINGS) }
                 )
-                Screen.PRIVACY -> LensigoPrivacyScreen(
-                    onBack = { moveTo(privacyReturnScreen) },
-                    onSettings = { moveTo(Screen.SETTINGS) },
-                    onPermissions = {
-                        val details = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS,
-                            Uri.fromParts("package", context.packageName, null))
-                        runCatching { context.startActivity(details) }
-                            .onFailure {
-                                Toast.makeText(context, "Postavke nisu dostupne",
-                                    Toast.LENGTH_SHORT).show()
-                            }
-                    }
-                )
                 Screen.ABOUT -> LensigoAboutScreen(
                     version = BuildConfig.VERSION_NAME,
                     onBack = { moveTo(aboutReturnScreen) },
                     onSettings = { moveTo(Screen.SETTINGS) },
-                    onPrivacy = {
-                        privacyReturnScreen = Screen.ABOUT
-                        moveTo(Screen.PRIVACY)
-                    },
                     onLicences = { moveTo(Screen.LICENCES) },
                     onWebsite = {
                         runCatching {

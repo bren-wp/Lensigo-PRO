@@ -15,7 +15,7 @@ The feature is **not considered device-tested** just because it compiles.
 
 ## Screens 18 and 19
 
-- Privacy: navy surface, centered cyan aperture, headline, four information rows, secondary information panel.
+- Privacy: no separate screen; confirm Camera/Settings permission states and offline storage remain operational.
 - About: centered symbol / LENSIGO wordmark, four rows (app name, website, privacy, licences), copyright and version.
 - Buttons are wired to Android application settings, in-app privacy / licence information, or browser via ACTION_VIEW.
 - All screen copies use meaningful icons and avoid representing future features as complete.

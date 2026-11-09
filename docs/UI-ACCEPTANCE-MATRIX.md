@@ -44,7 +44,7 @@ unfavorable controls with broad masks.
 - 60 FPS and video stabilization indicate target/availability; actual codec
   behavior is validated from recorded file metadata on physical devices.
 - Portrait person mask and panorama perspective match tested on diverse scenes.
-- Gallery/Viewer/Editor/Settings/Privacy/About tested at API 24–36.
+- Gallery/Viewer/Editor/Settings/About tested at API 24–36; Privacy is not a separate screen.
 - AAB signed with production upload key; current preview AAB is **unsigned**.
 - Full pixel-perfect 1:1 can be claimed only for the exactly matched
   screen/viewport pairs whose full-frame diff supports it.

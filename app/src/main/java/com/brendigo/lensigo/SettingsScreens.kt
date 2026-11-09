@@ -129,7 +129,6 @@ internal fun LensigoSettingsScreen(
     onSD: (Boolean) -> Unit,
     onCameraSettings: () -> Unit,
     onMicrophone: () -> Unit,
-    onPrivacy: () -> Unit,
     onAbout: () -> Unit,
     onBack: () -> Unit
 ) {
@@ -185,7 +184,7 @@ internal fun LensigoSettingsScreen(
                     SettingsDivider()
                     SettingsItem(Icons.Default.VerifiedUser, "Lokacija u EXIF-u",
                         "Ne prikuplja se niti dodaje fotografijama",
-                        checked = false, onClick = onPrivacy)
+                        checked = false)
                     SettingsDivider()
                     SettingsItem(Icons.Default.CloudOff, "Lokalna obrada",
                         "Izvanmrežni rad, bez poslužitelja",
