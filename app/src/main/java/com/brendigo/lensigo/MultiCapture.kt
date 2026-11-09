@@ -22,67 +22,111 @@ object PanoramaComposer {
     const val MIN_FRAMES = 2
     private const val OVERLAP = .28f
 
-    suspend fun save(context: Context, frames: List<File>, quality: Int, lowMemory: Boolean): Uri =
-        withContext(Dispatchers.IO) {
-            require(frames.size in MIN_FRAMES..MAX_FRAMES) { "Potrebno je 2–5 fotografija" }
-            val targetHeight = if (lowMemory) 560 else 760
-            var output: Bitmap? = null
-            try {
-                // First frame defines the aspect ratio, all frames normalized.
-                val first = FilterEngine.decode(frames.first(), 1500)
-                val tileWidth = (first.width * (targetHeight / first.height.toFloat()))
-                    .toInt().coerceIn(320, 1300)
-                val overlapPixels = (tileWidth * OVERLAP).toInt()
-                val advance = tileWidth - overlapPixels
-                val outWidth = tileWidth + advance * (frames.size - 1)
-                require(outWidth <= 6200) { "Prevelika panorama" }
-                val result = Bitmap.createBitmap(outWidth, targetHeight, Bitmap.Config.ARGB_8888)
-                output = result
-                val canvas = Canvas(result)
-                result.eraseColor(Color.BLACK)
-                for (index in frames.indices) {
-                    val decoded = if (index == 0) first
-                        else FilterEngine.decode(frames[index], 1500)
-                    var scaled: Bitmap? = null
-                    try {
-                        scaled = Bitmap.createScaledBitmap(
-                            decoded, tileWidth, targetHeight, true
-                        )
-                        val x = index * advance
-                        if (index == 0) {
-                            canvas.drawBitmap(scaled, x.toFloat(), 0f, null)
-                        } else {
-                            // Blend overlap in strips without full-frame masks.
-                            val paint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
-                            val stripCount = 22
-                            for (i in 0 until stripCount) {
-                                val left = overlapPixels * i / stripCount
-                                val right = overlapPixels * (i + 1) / stripCount
-                                if (right <= left) continue
-                                paint.alpha = (255 * ((i + .5f) / stripCount)).toInt()
-                                canvas.drawBitmap(
-                                    scaled, Rect(left, 0, right, targetHeight),
-                                    RectF((x + left).toFloat(), 0f,
-                                        (x + right).toFloat(), targetHeight.toFloat()), paint
-                                )
-                            }
-                            paint.alpha = 255
-                            canvas.drawBitmap(scaled,
-                                Rect(overlapPixels, 0, tileWidth, targetHeight),
-                                RectF((x + overlapPixels).toFloat(), 0f,
-                                    (x + tileWidth).toFloat(), targetHeight.toFloat()), paint)
-                        }
-                    } finally {
-                        if (scaled !== decoded && scaled?.isRecycled == false) scaled.recycle()
-                        if (!decoded.isRecycled) decoded.recycle()
+    suspend fun save(context: Context, frames: List<File>, quality: Int,
+                     lowMemory: Boolean): Uri = withContext(Dispatchers.IO) {
+        require(frames.size in MIN_FRAMES..MAX_FRAMES) { "Potrebno je 2–5 fotografija" }
+        val targetHeight = if (lowMemory) 560 else 760
+        var output: Bitmap? = null
+        var lastScaled: Bitmap? = null
+        try {
+            var accumulated = Matrix()
+            var maxRight = 0f
+            var minTop = Float.POSITIVE_INFINITY
+            var maxBottom = 0f
+            val margin = targetHeight / 5
+            var fullWidth = 0
+            var overlap = 0
+            var advance = 0
+            var canvas: Canvas? = null
+            for (index in frames.indices) {
+                val decoded = FilterEngine.decode(frames[index], 1500)
+                var scaled: Bitmap? = null
+                try {
+                    if (index == 0) {
+                        fullWidth = (decoded.width *
+                            (targetHeight / decoded.height.toFloat()))
+                            .toInt().coerceIn(320, 1300)
+                        overlap = (fullWidth * OVERLAP).toInt()
+                        advance = fullWidth - overlap
+                        val maxEstimatedAdvance = advance + fullWidth / 6
+                        val outWidth = fullWidth +
+                            maxEstimatedAdvance * (frames.size - 1)
+                        require(outWidth <= 6200) { "Prevelika panorama" }
+                        output = Bitmap.createBitmap(outWidth,
+                            targetHeight + margin * 2, Bitmap.Config.ARGB_8888)
+                        output.eraseColor(Color.BLACK)
+                        canvas = Canvas(output)
+                        accumulated.setTranslate(0f, margin.toFloat())
                     }
+                    scaled = Bitmap.createScaledBitmap(
+                        decoded, fullWidth, targetHeight, true
+                    )
+                    if (index != 0) {
+                        // True planar 3x3 homography from feature matches with
+                        // deterministic RANSAC; fall back to safe fixed overlap
+                        // when a scene lacks stable, textured correspondence.
+                        val relative = lastScaled?.let {
+                            PanoramaRegistration.estimate(it,scaled,advance)
+                        } ?: Matrix().apply { setTranslate(advance.toFloat(),0f) }
+                        accumulated = Matrix().apply {
+                            setConcat(accumulated,relative)
+                        }
+                    }
+                    val paint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)
+                    if (index == 0) {
+                        canvas!!.drawBitmap(scaled, accumulated, paint)
+                    } else {
+                        val drawing = canvas!!
+                        drawing.save()
+                        drawing.concat(accumulated)
+                        val pieces = 22
+                        for (i in 0 until pieces) {
+                            val left = overlap * i / pieces
+                            val right = overlap * (i + 1) / pieces
+                            if(right<=left)continue
+                            drawing.save()
+                            drawing.clipRect(left,0,right,targetHeight)
+                            paint.alpha=(255f*(i+.5f)/pieces).toInt()
+                            drawing.drawBitmap(scaled,0f,0f,paint)
+                            drawing.restore()
+                        }
+                        drawing.save()
+                        drawing.clipRect(overlap,0,fullWidth,targetHeight)
+                        paint.alpha=255
+                        drawing.drawBitmap(scaled,0f,0f,paint)
+                        drawing.restore()
+                        drawing.restore()
+                    }
+                    val corners=floatArrayOf(0f,0f,fullWidth.toFloat(),0f,
+                        0f,targetHeight.toFloat(),fullWidth.toFloat(),targetHeight.toFloat())
+                    accumulated.mapPoints(corners)
+                    maxRight=maxOf(maxRight,corners[0],corners[2],corners[4],corners[6])
+                    minTop=minOf(minTop,corners[1],corners[3],corners[5],corners[7])
+                    maxBottom=maxOf(maxBottom,corners[1],corners[3],corners[5],corners[7])
+                    lastScaled?.let { if(!it.isRecycled)it.recycle() }
+                    lastScaled=scaled
+                    scaled=null
+                } finally {
+                    if(scaled?.isRecycled==false)scaled.recycle()
+                    if(!decoded.isRecycled)decoded.recycle()
                 }
-                MediaLibrary.saveBitmap(context, result, "PANO", quality)
-            } finally {
-                output?.recycle()
-                frames.forEach { it.delete() }
             }
+            val result=checkNotNull(output)
+            val top=minTop.toInt().coerceIn(0,result.height-1)
+            val right=(maxRight.toInt()+2).coerceIn(1,result.width)
+            val bottom=(maxBottom.toInt()+2).coerceIn(top+1,result.height)
+            val cropped=Bitmap.createBitmap(result,0,top,right,bottom-top)
+            try {
+                MediaLibrary.saveBitmap(context,cropped,"PANO",quality)
+            } finally {
+                if(cropped!==result && !cropped.isRecycled)cropped.recycle()
+            }
+        } finally {
+            if(lastScaled?.isRecycled==false)lastScaled.recycle()
+            if(output?.isRecycled==false)output.recycle()
+            frames.forEach { it.delete() }
         }
+    }
 }
 
 /** Compose two captures: full-size back view with front view in a bordered PIP. */
