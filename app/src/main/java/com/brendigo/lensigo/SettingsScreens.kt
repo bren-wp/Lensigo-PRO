@@ -223,6 +223,8 @@ internal fun LensigoCameraSettingsScreen(
     hasMicrophone: Boolean,
     recordAudio: Boolean,
     nightProcessing: Boolean,
+    hdrEnabled: Boolean,
+    hdrSupported: Boolean,
     rawEnabled: Boolean,
     rawSupported: Boolean,
     onQuality: (Int) -> Unit,
@@ -238,6 +240,7 @@ internal fun LensigoCameraSettingsScreen(
     onMicrophone: () -> Unit,
     onRecordAudio: (Boolean) -> Unit,
     onNightProcessing: (Boolean) -> Unit,
+    onHdrEnabled: (Boolean) -> Unit,
     onRawEnabled: (Boolean) -> Unit,
     onBack: () -> Unit
 ) {
@@ -272,7 +275,13 @@ internal fun LensigoCameraSettingsScreen(
                             } else null)
                         SettingsDivider()
                         SettingsItem(Icons.Default.Tune, "HDR obrada",
-                            "Ovisi o obradi uređaja", "Uređaj")
+                            if (hdrSupported) "Stvarna CameraX HDR ekstenzija"
+                            else "Provjeri dostupnost otvaranjem načina FOTO",
+                            if (!hdrSupported) "Nije potvrđena"
+                            else if (hdrEnabled) "Uključena" else "Isključena",
+                            onClick = if (hdrSupported) {
+                                { onHdrEnabled(!hdrEnabled) }
+                            } else null)
                         SettingsDivider()
                         SettingsItem(Icons.Default.AspectRatio, "Omjer slike",
                             "Standardni ili široki kadar",

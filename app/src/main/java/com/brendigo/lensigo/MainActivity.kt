@@ -208,6 +208,10 @@ private fun LensigoApplication() {
     var nightProcessing by remember {
         mutableStateOf(prefs.getBoolean("night_processing", true))
     }
+    var hdrEnabled by remember {
+        mutableStateOf(prefs.getBoolean("hdr_processing", false))
+    }
+    var hdrSupported by remember { mutableStateOf(false) }
     var lowMemory by remember { mutableStateOf(prefs.getBoolean("low_memory", true)) }
     var softenNoise by remember { mutableStateOf(prefs.getBoolean("noise", false)) }
     var sharpen by remember { mutableStateOf(prefs.getBoolean("sharpen", false)) }
@@ -359,7 +363,8 @@ private fun LensigoApplication() {
         portraitBlur = if (mode == CameraMode.PORTRAIT && !vendorEffect) portraitBlur else 0f
     )
     DisposableEffect(previewView, selfieView, screen, front, mode, aspectWide, preferSD,
-        prefer60Fps, eisEnabled, rawEnabled, dualStep, nightProcessing, hasCameraPermission) {
+        prefer60Fps, eisEnabled, rawEnabled, dualStep, nightProcessing,
+        hdrEnabled, hasCameraPermission) {
         val view = previewView
         if (view == null || screen != Screen.CAMERA || !hasCameraPermission) {
             onDispose { }
@@ -452,6 +457,23 @@ private fun LensigoApplication() {
                                 Toast.LENGTH_LONG).show()
                         }
                     } else {
+                        if (mode == CameraMode.PHOTO) {
+                            // Availability depends on the currently selected
+                            // real lens. Query even when HDR is disabled so
+                            // Settings never offers an unverified switch.
+                            val hdrFuture = ExtensionsManager.getInstanceAsync(context, provider)
+                            hdrFuture.addListener({
+                                if (!disposed) {
+                                    hdrSupported = runCatching {
+                                        hdrFuture.get().isExtensionAvailable(
+                                            selector, ExtensionMode.HDR
+                                        )
+                                    }.getOrDefault(false)
+                                }
+                            }, ContextCompat.getMainExecutor(context))
+                        } else {
+                            hdrSupported = false
+                        }
                         val supportsDng = mode == CameraMode.PRO && runCatching {
                             ImageCapture.getImageCaptureCapabilities(
                                 provider.getCameraInfo(selector)
@@ -472,6 +494,7 @@ private fun LensigoApplication() {
                             .build()
                         photoCapture = capture; videoCapture = null
                         val ext = when (mode) {
+                            CameraMode.PHOTO -> if (hdrEnabled) ExtensionMode.HDR else null
                             CameraMode.NIGHT -> if (nightProcessing) ExtensionMode.NIGHT else null
                             CameraMode.PORTRAIT -> ExtensionMode.BOKEH
                             else -> null
@@ -1393,6 +1416,7 @@ private fun LensigoApplication() {
                     noise = softenNoise, sharpen = sharpen,
                     lowMemory = lowMemory, hasMicrophone = hasMicPermission,
                     recordAudio = recordAudio, nightProcessing = nightProcessing,
+                    hdrEnabled = hdrEnabled, hdrSupported = hdrSupported,
                     rawEnabled = rawEnabled, rawSupported = rawSupported,
                     onQuality = { jpegQuality = it },
                     onQualityFinished = {
@@ -1433,6 +1457,10 @@ private fun LensigoApplication() {
                     onNightProcessing = {
                         nightProcessing = it
                         prefs.edit().putBoolean("night_processing", it).apply()
+                    },
+                    onHdrEnabled = {
+                        hdrEnabled = it
+                        prefs.edit().putBoolean("hdr_processing", it).apply()
                     },
                     onRawEnabled = {
                         rawEnabled = it
