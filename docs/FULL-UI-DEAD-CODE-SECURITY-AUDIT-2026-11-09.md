@@ -67,3 +67,8 @@ Sigurnosna regresijska zaštita: `tools/security_audit.py` i `tools/test_securit
 5. Za Google Play izraditi **potpisan produkcijski AAB** s održivim signing key sustavom, a ne tretirati GitHub debug APK ili unsigned AAB kao produkcijsko izdanje.
 
 **Zaključak:** postoje stvarna funkcionalna i sigurnosna poboljšanja, ali audit ne potvrđuje 0% vizualnih razlika, besprijekoran rad svih OEM funkcija niti potpunu produkcijsku sigurnost. Gornji otvoreni nalazi služe kao mjerljivi kriteriji za sljedeću iteraciju.
+
+## Naknadni popravak snimanja videa
+
+- Ranija opcija `HD` bila je ograničena na CameraX `Quality.HD`, čak i na uređajima koji podržavaju 1080p/4K. Sada odabir „Najbolja” traži kvalitetu redom `UHD → FHD → HD → SD`, a Android CameraX odabire dostupnu. SD ostaje eksplicitna štedljiva opcija; za nove instalacije početni odabir je najbolja kvaliteta, ali postojeća korisnička postavka ostaje očuvana.
+- HUD koristi `AUTO` umjesto lažno preciznog „HD” za automatiziran odabir. **To ne jamči 4K niti 60 FPS** — brzina sličica ovisi o kameri, podršci odabrane kvalitete i CameraX implementaciji. Upozorenje o razlici prema mockupu 06 i 16–17 i dalje vrijedi.

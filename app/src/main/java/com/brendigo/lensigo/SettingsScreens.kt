@@ -165,7 +165,8 @@ internal fun LensigoSettingsScreen(
                         "JPEG fotografije", "$jpegQuality %", onClick = onCameraSettings)
                     SettingsDivider()
                     SettingsItem(Icons.Default.Videocam, "Kvaliteta videozapisa",
-                        "Rezolucija ovisi o kameri", if (preferSD) "SD" else "HD",
+                        "Najviša podržana razlučivost (do 4K)",
+                        if (preferSD) "SD" else "Najbolja",
                         onClick = { onSD(!preferSD) })
                     SettingsDivider()
                     SettingsItem(Icons.Default.GridOn, "Mreža kadra",
@@ -272,8 +273,8 @@ internal fun LensigoCameraSettingsScreen(
                     // informational: CameraX cannot promise 4K/60 or EIS here.
                     SettingsSection("Video") {
                         SettingsItem(Icons.Default.Videocam, "Razlučivost",
-                            "SD ili HD, ovisno o kameri",
-                            if (preferSD) "SD" else "HD",
+                            "SD ili najviša podržana (do 4K)",
+                            if (preferSD) "SD" else "Najbolja",
                             onClick = { onSD(!preferSD) })
                         SettingsDivider()
                         SettingsItem(Icons.Default.Timer, "Broj sličica",

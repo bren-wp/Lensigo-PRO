@@ -191,7 +191,7 @@ private fun LensigoApplication() {
         mutableStateOf(prefs.getBoolean("photo_aspect_wide", false))
     }
     var aspectWide by remember { mutableStateOf(photoAspectWide) }
-    var preferSD by remember { mutableStateOf(prefs.getBoolean("video_sd", true)) }
+    var preferSD by remember { mutableStateOf(prefs.getBoolean("video_sd", false)) }
     var recordAudio by remember { mutableStateOf(prefs.getBoolean("record_audio", true)) }
     var nightProcessing by remember {
         mutableStateOf(prefs.getBoolean("night_processing", true))
@@ -387,9 +387,15 @@ private fun LensigoApplication() {
                         if (!camera.cameraInfo.hasFlashUnit()) flash = false
                     }
                     if (recordingMode) {
-                        val preferred = if (preferSD) Quality.SD else Quality.HD
+                        val preferred = if (preferSD) Quality.SD else Quality.UHD
                         val selectorQuality = QualitySelector.fromOrderedList(
-                            if (preferSD) listOf(Quality.SD, Quality.HD) else listOf(Quality.HD, Quality.SD),
+                            if (preferSD) {
+                                listOf(Quality.SD, Quality.HD, Quality.FHD, Quality.UHD)
+                            } else {
+                                // Use up to UHD/4K if available, then FHD/HD/SD.
+                                // Frame rate remains device-controlled; never promise 60 FPS.
+                                listOf(Quality.UHD, Quality.FHD, Quality.HD, Quality.SD)
+                            },
                             FallbackStrategy.lowerQualityOrHigherThan(preferred)
                         )
                         val capture = VideoCapture.withOutput(
@@ -881,7 +887,7 @@ private fun LensigoApplication() {
                                 tint = if (flashAvailable) White else Muted)
                         }
                         Text(when(mode) {
-                            CameraMode.VIDEO -> if (preferSD) "SD" else "HD"
+                            CameraMode.VIDEO -> if (preferSD) "SD" else "AUTO"
                             CameraMode.PRO -> "JPEG"
                             CameraMode.NIGHT -> "NOĆ"
                             CameraMode.PORTRAIT -> if (vendorEffect) "BOKEH" else "PORTRET"
