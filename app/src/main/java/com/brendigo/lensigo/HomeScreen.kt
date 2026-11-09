@@ -188,20 +188,33 @@ internal fun LensigoHomeScreen(
                     }
                 }
             }
-            Box(Modifier.widthIn(max = maxContentWidth).fillMaxWidth()
-                .padding(horizontal = horizontalPad, vertical = 15.dp)
-                .heightIn(min = if (tablet) 57.dp else 40.dp)
-                .clip(RoundedCornerShape(15.dp))
-                .border(1.dp, Cyan.copy(alpha = .8f), RoundedCornerShape(15.dp))
-                .background(Color(0xFF0B4868))
-                .clickable(onClickLabel = "Otvori galeriju snimki", role = Role.Button,
-                    onClick = onGallery), contentAlignment = Alignment.Center) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(Icons.Default.PhotoLibrary, null, tint = White,
-                        modifier = Modifier.size(18.dp))
-                    Spacer(Modifier.width(9.dp))
-                    Text("Otvori galeriju", color = White,
-                        fontSize = 15.sp, fontWeight = FontWeight.Bold)
+            // The visible 40dp mobile gallery pill matches the reference,
+            // but the interactive region spans at least 48dp for accessibility.
+            Box(
+                Modifier.widthIn(max = maxContentWidth).fillMaxWidth()
+                    .padding(horizontal = horizontalPad, vertical = 11.dp)
+                    .heightIn(min = if (tablet) 57.dp else 48.dp)
+                    .clickable(
+                        onClickLabel = "Otvori galeriju snimki",
+                        role = Role.Button, onClick = onGallery
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Box(
+                    Modifier.fillMaxWidth()
+                        .height(if (tablet) 57.dp else 40.dp)
+                        .clip(RoundedCornerShape(15.dp))
+                        .border(1.dp, Cyan.copy(alpha = .8f), RoundedCornerShape(15.dp))
+                        .background(Color(0xFF0B4868)),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Icon(Icons.Default.PhotoLibrary, null, tint = White,
+                            modifier = Modifier.size(18.dp))
+                        Spacer(Modifier.width(9.dp))
+                        Text("Otvori galeriju", color = White,
+                            fontSize = 15.sp, fontWeight = FontWeight.Bold)
+                    }
                 }
             }
         }
