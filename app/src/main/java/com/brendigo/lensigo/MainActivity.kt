@@ -1,6 +1,10 @@
 package com.brendigo.lensigo
 
 import android.Manifest
+import android.hardware.camera2.CameraCharacteristics
+import android.util.Range
+import androidx.camera.camera2.interop.Camera2CameraInfo
+import androidx.camera.camera2.interop.ExperimentalCamera2Interop
 import android.app.Activity
 import android.content.ContentValues
 import android.content.Intent
@@ -137,6 +141,7 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+@androidx.annotation.OptIn(ExperimentalCamera2Interop::class)
 @Composable
 private fun LensigoApplication() {
     val context = LocalContext.current
@@ -192,6 +197,8 @@ private fun LensigoApplication() {
     }
     var aspectWide by remember { mutableStateOf(photoAspectWide) }
     var preferSD by remember { mutableStateOf(prefs.getBoolean("video_sd", false)) }
+    var prefer60Fps by remember { mutableStateOf(prefs.getBoolean("video_60fps", false)) }
+    var fps60Supported by remember { mutableStateOf(false) }
     var recordAudio by remember { mutableStateOf(prefs.getBoolean("record_audio", true)) }
     var nightProcessing by remember {
         mutableStateOf(prefs.getBoolean("night_processing", true))
@@ -347,7 +354,7 @@ private fun LensigoApplication() {
         portraitBlur = if (mode == CameraMode.PORTRAIT && !vendorEffect) portraitBlur else 0f
     )
     DisposableEffect(previewView, selfieView, screen, front, mode, aspectWide, preferSD,
-        dualStep, nightProcessing, hasCameraPermission) {
+        prefer60Fps, dualStep, nightProcessing, hasCameraPermission) {
         val view = previewView
         if (view == null || screen != Screen.CAMERA || !hasCameraPermission) {
             onDispose { }
@@ -398,10 +405,39 @@ private fun LensigoApplication() {
                             },
                             FallbackStrategy.lowerQualityOrHigherThan(preferred)
                         )
-                        val capture = VideoCapture.withOutput(
-                            Recorder.Builder().setQualitySelector(selectorQuality).build())
-                        videoCapture = capture; photoCapture = null
-                        onBound(provider.bindToLifecycle(lifecycle, selector, preview, capture), false)
+                        val recorder = Recorder.Builder()
+                            .setQualitySelector(selectorQuality).build()
+                        val availableFps = runCatching {
+                            Camera2CameraInfo.from(provider.getCameraInfo(selector))
+                                .getCameraCharacteristic(
+                                    CameraCharacteristics.CONTROL_AE_AVAILABLE_TARGET_FPS_RANGES
+                                )?.toList().orEmpty()
+                        }.getOrDefault(emptyList())
+                        fps60Supported = CameraControlRules.supports60Fps(
+                            availableFps.map { it.lower..it.upper }
+                        )
+                        val canRequest60 = prefer60Fps && fps60Supported
+                        val requested = VideoCapture.Builder(recorder).apply {
+                            if (canRequest60) setTargetFrameRate(Range(60, 60))
+                        }.build()
+                        try {
+                            onBound(provider.bindToLifecycle(lifecycle, selector, preview, requested), false)
+                            videoCapture = requested; photoCapture = null
+                        } catch (error: Exception) {
+                            if (!canRequest60) throw error
+                            // A camera can offer 60fps but reject it together
+                            // with the requested UHD/Preview stream. Fall back
+                            // to the standard, usable recording configuration.
+                            provider.unbindAll()
+                            val fallback = VideoCapture.withOutput(recorder)
+                            onBound(provider.bindToLifecycle(
+                                lifecycle, selector, preview, fallback
+                            ), false)
+                            videoCapture = fallback; photoCapture = null
+                            Toast.makeText(context,
+                                "60 FPS nije podržano za ovu kombinaciju, koristi se Auto",
+                                Toast.LENGTH_LONG).show()
+                        }
                     } else {
                         val capture = ImageCapture.Builder()
                             .setTargetAspectRatio(if (aspectWide) AspectRatio.RATIO_16_9 else AspectRatio.RATIO_4_3)
@@ -1270,7 +1306,8 @@ private fun LensigoApplication() {
                 Screen.CAMERA_SETTINGS -> LensigoCameraSettingsScreen(
                     jpegQuality = jpegQuality,
                     grid = gridEnabled, photoAspectWide = photoAspectWide,
-                    preferSD = preferSD,
+                    preferSD = preferSD, prefer60Fps = prefer60Fps,
+                    fps60Supported = fps60Supported,
                     noise = softenNoise, sharpen = sharpen,
                     lowMemory = lowMemory, hasMicrophone = hasMicPermission,
                     recordAudio = recordAudio, nightProcessing = nightProcessing,
@@ -1285,6 +1322,10 @@ private fun LensigoApplication() {
                     },
                     onGrid = { gridEnabled = it; prefs.edit().putBoolean("grid", it).apply() },
                     onSD = { preferSD = it; prefs.edit().putBoolean("video_sd", it).apply() },
+                    on60Fps = {
+                        prefer60Fps = it
+                        prefs.edit().putBoolean("video_60fps", it).apply()
+                    },
                     onNoise = { softenNoise = it; prefs.edit().putBoolean("noise", it).apply() },
                     onSharpen = { sharpen = it; prefs.edit().putBoolean("sharpen", it).apply() },
                     onLowMemory = {

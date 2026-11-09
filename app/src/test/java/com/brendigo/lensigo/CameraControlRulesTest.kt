@@ -6,6 +6,13 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class CameraControlRulesTest {
+    @Test fun sixtyFpsRequiresAnAdvertisedCameraRange() {
+        assertTrue(CameraControlRules.supports60Fps(listOf(15..60, 30..30)))
+        assertTrue(CameraControlRules.supports60Fps(listOf(60..60)))
+        assertFalse(CameraControlRules.supports60Fps(listOf(15..30, 24..30)))
+        assertFalse(CameraControlRules.supports60Fps(emptyList()))
+    }
+
     @Test fun audioCanBeDisabledWithoutRevokingMicrophonePermission() {
         assertFalse(CameraControlRules.recordAudioEnabled(false, true))
         assertFalse(CameraControlRules.recordAudioEnabled(true, false))

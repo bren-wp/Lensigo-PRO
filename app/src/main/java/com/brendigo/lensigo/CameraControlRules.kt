@@ -11,6 +11,10 @@ internal object CameraControlRules {
     fun recordAudioEnabled(enabledByUser: Boolean, hasPermission: Boolean): Boolean =
         enabledByUser && hasPermission
 
+    /** Camera2 advertised ranges are necessary, not sufficient, for 60 FPS. */
+    fun supports60Fps(ranges: List<IntRange>): Boolean =
+        ranges.any { 60 in it }
+
     fun shutterEnabled(
         permission: Boolean, processing: Boolean, countdown: Int,
         videoMode: Boolean, recording: Boolean, captureReady: Boolean

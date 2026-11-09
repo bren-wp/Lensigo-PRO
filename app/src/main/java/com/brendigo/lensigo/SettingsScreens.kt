@@ -213,6 +213,8 @@ internal fun LensigoCameraSettingsScreen(
     grid: Boolean,
     photoAspectWide: Boolean,
     preferSD: Boolean,
+    prefer60Fps: Boolean,
+    fps60Supported: Boolean,
     noise: Boolean,
     sharpen: Boolean,
     lowMemory: Boolean,
@@ -224,6 +226,7 @@ internal fun LensigoCameraSettingsScreen(
     onPhotoAspect: (Boolean) -> Unit,
     onGrid: (Boolean) -> Unit,
     onSD: (Boolean) -> Unit,
+    on60Fps: (Boolean) -> Unit,
     onNoise: (Boolean) -> Unit,
     onSharpen: (Boolean) -> Unit,
     onLowMemory: (Boolean) -> Unit,
@@ -278,7 +281,12 @@ internal fun LensigoCameraSettingsScreen(
                             onClick = { onSD(!preferSD) })
                         SettingsDivider()
                         SettingsItem(Icons.Default.Timer, "Broj sličica",
-                            "Brzina koju odabire uređaj", "Auto")
+                            if (fps60Supported) "60 FPS na kompatibilnom uređaju"
+                            else "Za ovu kameru 60 FPS nije potvrđeno",
+                            if (prefer60Fps && fps60Supported) "60 FPS (cilj)" else "Auto",
+                            onClick = if (fps60Supported) {
+                                { on60Fps(!prefer60Fps) }
+                            } else null)
                         SettingsDivider()
                         SettingsItem(Icons.Default.Tune, "Stabilizacija",
                             "Ovisi o podršci uređaja", "Uređaj")
