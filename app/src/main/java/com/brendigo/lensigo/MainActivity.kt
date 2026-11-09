@@ -425,8 +425,7 @@ private fun LensigoApplication() {
                             Camera2CameraInfo.from(provider.getCameraInfo(selector))
                                 .getCameraCharacteristic(CameraCharacteristics
                                     .CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES)
-                                ?.contains(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_ON)
-                                == true
+                                ?.contains(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_ON) == true
                         }.getOrDefault(false)
                         val canRequest60 = prefer60Fps && fps60Supported
                         val requested = VideoCapture.Builder(recorder).apply {
