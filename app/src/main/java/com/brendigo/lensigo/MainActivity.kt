@@ -198,6 +198,8 @@ private fun LensigoApplication() {
     var aspectWide by remember { mutableStateOf(photoAspectWide) }
     var preferSD by remember { mutableStateOf(prefs.getBoolean("video_sd", false)) }
     var prefer60Fps by remember { mutableStateOf(prefs.getBoolean("video_60fps", false)) }
+    var rawEnabled by remember { mutableStateOf(prefs.getBoolean("raw_jpeg", false)) }
+    var rawSupported by remember { mutableStateOf(false) }
     var fps60Supported by remember { mutableStateOf(false) }
     var recordAudio by remember { mutableStateOf(prefs.getBoolean("record_audio", true)) }
     var nightProcessing by remember {
@@ -354,7 +356,7 @@ private fun LensigoApplication() {
         portraitBlur = if (mode == CameraMode.PORTRAIT && !vendorEffect) portraitBlur else 0f
     )
     DisposableEffect(previewView, selfieView, screen, front, mode, aspectWide, preferSD,
-        prefer60Fps, dualStep, nightProcessing, hasCameraPermission) {
+        prefer60Fps, rawEnabled, dualStep, nightProcessing, hasCameraPermission) {
         val view = previewView
         if (view == null || screen != Screen.CAMERA || !hasCameraPermission) {
             onDispose { }
@@ -439,11 +441,23 @@ private fun LensigoApplication() {
                                 Toast.LENGTH_LONG).show()
                         }
                     } else {
+                        val supportsDng = mode == CameraMode.PRO && runCatching {
+                            ImageCapture.getImageCaptureCapabilities(
+                                provider.getCameraInfo(selector)
+                            ).supportedOutputFormats.contains(
+                                ImageCapture.OUTPUT_FORMAT_RAW_JPEG
+                            )
+                        }.getOrDefault(false)
+                        rawSupported = supportsDng
                         val capture = ImageCapture.Builder()
                             .setTargetAspectRatio(if (aspectWide) AspectRatio.RATIO_16_9 else AspectRatio.RATIO_4_3)
                             .setCaptureMode(if (mode == CameraMode.NIGHT)
                                 ImageCapture.CAPTURE_MODE_MAXIMIZE_QUALITY
                                 else ImageCapture.CAPTURE_MODE_MINIMIZE_LATENCY)
+                            .apply {
+                                if (rawEnabled && supportsDng)
+                                    setOutputFormat(ImageCapture.OUTPUT_FORMAT_RAW_JPEG)
+                            }
                             .build()
                         photoCapture = capture; videoCapture = null
                         val ext = when (mode) {
@@ -712,29 +726,77 @@ private fun LensigoApplication() {
         if (!hasStoragePermission) { requestPermissions(); return }
         val capture = photoCapture ?: return
         processing = true
-        val file = createCaptureTempFile("lensigo_capture_") ?: return
-        capture.takePicture(ImageCapture.OutputFileOptions.Builder(file).build(),
-            ContextCompat.getMainExecutor(context), object : ImageCapture.OnImageSavedCallback {
-                override fun onImageSaved(output: ImageCapture.OutputFileResults) {
-                    scope.launch {
-                        try {
-                            val uri = withContext(Dispatchers.IO) {
-                                try { MediaLibrary.saveImage(context, file, look, jpegQuality, lowMemory) }
-                                finally { file.delete() }
+        val jpeg = createCaptureTempFile("lensigo_capture_") ?: return
+        val useRaw = mode == CameraMode.PRO && rawEnabled && rawSupported &&
+            capture.outputFormat == ImageCapture.OUTPUT_FORMAT_RAW_JPEG
+        val raw = if (useRaw) runCatching {
+            File.createTempFile("lensigo_dng_", ".dng", context.cacheDir)
+        }.getOrNull() else null
+        if (useRaw && raw == null) {
+            jpeg.delete()
+            processing = false
+            Toast.makeText(context, "Nema prostora za DNG snimku", Toast.LENGTH_LONG).show()
+            return
+        }
+        fun clean() { jpeg.delete(); raw?.delete() }
+        var callbacks = 0
+        var settled = false
+        val callback = object : ImageCapture.OnImageSavedCallback {
+            override fun onImageSaved(output: ImageCapture.OutputFileResults) {
+                if (settled) return
+                callbacks++
+                if (callbacks < if (raw != null) 2 else 1) return
+                settled = true
+                scope.launch {
+                    try {
+                        val uri = withContext(Dispatchers.IO) {
+                            val jpegUri = MediaLibrary.saveImage(context, jpeg, look,
+                                jpegQuality, lowMemory)
+                            try {
+                                if (raw != null) MediaLibrary.saveRaw(context, raw)
+                            } catch (e: Exception) {
+                                runCatching { context.contentResolver.delete(jpegUri, null, null) }
+                                throw e
                             }
-                            lastPhoto = uri
-                            Toast.makeText(context, "Fotografija spremljena", Toast.LENGTH_SHORT).show()
-                        } catch (e: Exception) {
-                            Toast.makeText(context, "Spremanje nije uspjelo: " + e.localizedMessage,
-                                Toast.LENGTH_LONG).show()
-                        } finally { processing = false }
+                            jpegUri
+                        }
+                        lastPhoto = uri
+                        Toast.makeText(context,
+                            if (raw != null) "JPEG i DNG spremljeni" else "Fotografija spremljena",
+                            Toast.LENGTH_SHORT).show()
+                    } catch (e: Exception) {
+                        Toast.makeText(context, "Spremanje nije uspjelo: " + e.localizedMessage,
+                            Toast.LENGTH_LONG).show()
+                    } finally {
+                        clean()
+                        processing = false
                     }
                 }
-                override fun onError(error: ImageCaptureException) {
-                    file.delete(); processing = false
-                    Toast.makeText(context, "Snimanje nije uspjelo: " + error.message, Toast.LENGTH_LONG).show()
-                }
-            })
+            }
+            override fun onError(error: ImageCaptureException) {
+                if (settled) return
+                settled = true
+                clean()
+                processing = false
+                Toast.makeText(context, "Snimanje nije uspjelo: " + error.message,
+                    Toast.LENGTH_LONG).show()
+            }
+        }
+        try {
+            val options = ImageCapture.OutputFileOptions.Builder(jpeg).build()
+            if (raw != null) {
+                capture.takePicture(ImageCapture.OutputFileOptions.Builder(raw).build(),
+                    options, ContextCompat.getMainExecutor(context), callback)
+            } else {
+                capture.takePicture(options, ContextCompat.getMainExecutor(context), callback)
+            }
+        } catch (error: Exception) {
+            settled = true
+            clean()
+            processing = false
+            Toast.makeText(context, "Kamera nije mogla snimiti: " + error.localizedMessage,
+                Toast.LENGTH_LONG).show()
+        }
     }
     fun toggleRecording() {
         if (isRecording) {
@@ -1311,6 +1373,7 @@ private fun LensigoApplication() {
                     noise = softenNoise, sharpen = sharpen,
                     lowMemory = lowMemory, hasMicrophone = hasMicPermission,
                     recordAudio = recordAudio, nightProcessing = nightProcessing,
+                    rawEnabled = rawEnabled, rawSupported = rawSupported,
                     onQuality = { jpegQuality = it },
                     onQualityFinished = {
                         prefs.edit().putInt("quality", jpegQuality).apply()
@@ -1346,6 +1409,10 @@ private fun LensigoApplication() {
                     onNightProcessing = {
                         nightProcessing = it
                         prefs.edit().putBoolean("night_processing", it).apply()
+                    },
+                    onRawEnabled = {
+                        rawEnabled = it
+                        prefs.edit().putBoolean("raw_jpeg", it).apply()
                     },
                     onBack = { moveTo(Screen.SETTINGS) }
                 )

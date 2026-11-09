@@ -221,6 +221,8 @@ internal fun LensigoCameraSettingsScreen(
     hasMicrophone: Boolean,
     recordAudio: Boolean,
     nightProcessing: Boolean,
+    rawEnabled: Boolean,
+    rawSupported: Boolean,
     onQuality: (Int) -> Unit,
     onQualityFinished: () -> Unit,
     onPhotoAspect: (Boolean) -> Unit,
@@ -233,6 +235,7 @@ internal fun LensigoCameraSettingsScreen(
     onMicrophone: () -> Unit,
     onRecordAudio: (Boolean) -> Unit,
     onNightProcessing: (Boolean) -> Unit,
+    onRawEnabled: (Boolean) -> Unit,
     onBack: () -> Unit
 ) {
     var advanced by remember { mutableStateOf(false) }
@@ -258,7 +261,12 @@ internal fun LensigoCameraSettingsScreen(
                             "Najviša podržana za odabranu kameru", "Visoka")
                         SettingsDivider()
                         SettingsItem(Icons.Default.CropOriginal, "Format fotografije",
-                            "Spremanje u standardnom formatu", "JPEG")
+                            if (rawSupported) "RAW + JPEG samo u načinu PRO"
+                            else "RAW provjera dostupna nakon otvaranja PRO kamere",
+                            if (rawEnabled && rawSupported) "RAW + JPEG" else "JPEG",
+                            onClick = if (rawSupported) {
+                                { onRawEnabled(!rawEnabled) }
+                            } else null)
                         SettingsDivider()
                         SettingsItem(Icons.Default.Tune, "HDR obrada",
                             "Ovisi o obradi uređaja", "Uređaj")
