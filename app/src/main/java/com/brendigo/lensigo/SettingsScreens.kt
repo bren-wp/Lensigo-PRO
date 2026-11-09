@@ -92,10 +92,18 @@ private fun SettingsItem(
                 color = Muted, fontSize = 11.sp, lineHeight = 15.sp)
         }
         Spacer(Modifier.width(8.dp))
-        if (checked != null && onToggle != null) {
+        if (checked != null) {
+            // Informational fixed states are visible but not falsely editable.
+            // The parent row is the only action for interactive switches.
             Switch(checked = checked, onCheckedChange = null,
+                enabled = onToggle != null,
                 modifier = Modifier.heightIn(min = 40.dp),
-                colors = SwitchDefaults.colors(checkedTrackColor = Color(0xFF0A99C1)))
+                colors = SwitchDefaults.colors(
+                    checkedTrackColor = Color(0xFF0A99C1),
+                    disabledCheckedTrackColor = Color(0xFF0A99C1),
+                    disabledCheckedThumbColor = White,
+                    disabledUncheckedTrackColor = Color(0xFF395568),
+                    disabledUncheckedThumbColor = White))
         } else if (value != null) {
             Text(value, color = Muted, fontSize = 11.sp, textAlign = TextAlign.End,
                 maxLines = 2, overflow = TextOverflow.Ellipsis)
@@ -174,11 +182,13 @@ internal fun LensigoSettingsScreen(
                     SettingsItem(Icons.Default.Folder, "Mjesto spremanja",
                         "Pictures/LENSIGO · Movies/LENSIGO", "Uređaj")
                     SettingsDivider()
-                    SettingsItem(Icons.Default.CloudOff, "Lokalna obrada",
-                        "Fotografije se obrađuju na uređaju", "Aktivna")
+                    SettingsItem(Icons.Default.VerifiedUser, "Lokacija u EXIF-u",
+                        "Ne prikuplja se niti dodaje fotografijama",
+                        checked = false, onClick = onPrivacy)
                     SettingsDivider()
-                    SettingsItem(Icons.Default.VerifiedUser, "Dozvole",
-                        "Kamera, mikrofon i pristup datotekama", onClick = onPrivacy)
+                    SettingsItem(Icons.Default.CloudOff, "Lokalna obrada",
+                        "Izvanmrežni rad, bez poslužitelja",
+                        checked = true)
                 }
                 SettingsSection("Aplikacija") {
                     SettingsItem(Icons.Default.Language, "Jezik sučelja",
