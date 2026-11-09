@@ -24,6 +24,8 @@ jobs:
           python tools/generate_launcher.py app/src/main/res/drawable-nodpi/lensigo_launcher.png
       - name: Audit all user-visible Android text
         run: python tools/audit_public_ui.py
+      - name: Audit Android security and privacy contracts
+        run: python tools/security_audit.py
       - name: Pixel audit and Play package unit checks
         run: python -m unittest discover -s tools -p "test_*.py" -v
       - name: Install SDK
@@ -70,7 +72,7 @@ jobs:
               if gh release upload "$TAG" app/build/outputs/apk/debug/*.apk app/build/outputs/bundle/release/*.aab --clobber; then
                 exit 0
               fi
-            elif gh release create "$TAG" app/build/outputs/apk/debug/*.apk app/build/outputs/bundle/release/*.aab --target "$GITHUB_SHA" --prerelease --title "LENSIGO $TAG · Android preview" --notes "LENSIGO $TAG: Settings 16/17 reference row geometry compacted to 48dp minimum touch targets, preserving accessibility while reducing screen overflow on phone. Camera Settings 17 source 5+4 hierarchy and real night/audio controls retained in default layout; advanced controls remain accessible. Previous visual source matches for Privacy 18/About 19 and centered camera modes for all 8 styles retained. No verified Android screenshot pixel-diff. APK debug-signed; AAB unsigned."; then
+            elif gh release create "$TAG" app/build/outputs/apk/debug/*.apk app/build/outputs/bundle/release/*.aab --target "$GITHUB_SHA" --prerelease --title "LENSIGO $TAG · Android preview" --notes "LENSIGO $TAG: Security hardening: gallery on Android 10+ verifies MediaStore contributing owner; JPEG captures are re-encoded so quality settings apply and source EXIF is not copied; MediaStore publish status and copy status are validated; inactive Compose components and dead imports removed. Added fail-closed Python security audit to CI to protect against new network/location permissions, unsafe exports and raw JPEG passthrough. Full physical-device and pixel-perfect 1:1 checks remain outstanding. APK debug-signed, release AAB unsigned."; then
               exit 0
             fi
             if [ "$attempt" -eq 4 ]; then
