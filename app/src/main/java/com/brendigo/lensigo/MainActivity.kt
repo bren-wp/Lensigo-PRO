@@ -1114,6 +1114,7 @@ private fun LensigoApplication() {
                             Column(Modifier.align(Alignment.BottomCenter).padding(bottom = 76.dp)) {
                                 LensigoFilterPreviewStrip(
                                     selected = filter, intensity = intensity,
+                                    previewView = previewView,
                                     onSelected = { filter = it }
                                 )
                                 Slider(value = intensity, onValueChange = { intensity = it },

@@ -1,6 +1,8 @@
 package com.brendigo.lensigo
 
+import android.graphics.Bitmap
 import android.graphics.BitmapFactory
+import androidx.camera.view.PreviewView
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -12,7 +14,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.runtime.produceState
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -46,28 +52,51 @@ private val FilterInk = Color(0xFF081724)
 internal fun LensigoFilterPreviewStrip(
     selected: LensFilter,
     intensity: Float,
+    previewView: PreviewView?,
     onSelected: (LensFilter) -> Unit
 ) {
     val context = LocalContext.current
-    val previews by produceState<Map<LensFilter, ImageBitmap>>(
-        initialValue = emptyMap(), key1 = intensity, key2 = context
-    ) {
-        delay(120)
-        value = withContext(Dispatchers.Default) {
-            val source = BitmapFactory.decodeResource(
-                context.resources, R.drawable.lensigo_home_hero
-            )
-            if (source == null) emptyMap()
-            else try {
-                LensFilter.entries.associateWith { filter ->
-                    FilterEngine.apply(
-                        source, PhotoLook(filter = filter, intensity = intensity)
-                    ).asImageBitmap()
-                }
-            } finally {
-                source.recycle()
-            }
+    var frameNumber by remember(previewView) { mutableIntStateOf(0) }
+    LaunchedEffect(previewView) {
+        while (true) {
+            delay(1800)
+            frameNumber++
         }
+    }
+    val previews by produceState<Map<LensFilter, ImageBitmap>>(
+        initialValue = emptyMap(), key1 = intensity, key2 = frameNumber,
+        key3 = previewView
+    ) {
+        delay(100)
+        // PreviewView.bitmap is read on the UI thread, never on a worker.
+        // Process a tiny 160px sensor thumbnail, not the full-size camera
+        // frame. Only use the original source photo as a startup fallback.
+        val frame = runCatching { previewView?.bitmap }.getOrNull()
+        val source = if (frame != null) {
+            try {
+                val maxEdge = maxOf(frame.width, frame.height).coerceAtLeast(1)
+                val scale = 160f / maxEdge
+                Bitmap.createScaledBitmap(
+                    frame, (frame.width * scale).toInt().coerceAtLeast(1),
+                    (frame.height * scale).toInt().coerceAtLeast(1), true
+                )
+            } finally { frame.recycle() }
+        } else BitmapFactory.decodeResource(context.resources,
+            R.drawable.lensigo_home_hero)
+        if (source != null) {
+            try {
+                val generated = withContext(Dispatchers.Default) {
+                    LensFilter.entries.associateWith { filter ->
+                        FilterEngine.apply(
+                            source, PhotoLook(filter = filter, intensity = intensity)
+                        ).asImageBitmap()
+                    }
+                }
+                value = generated
+            } finally {
+                if (!source.isRecycled) source.recycle()
+            }
+        } else value = emptyMap()
     }
     // Every slider update creates a small set of actual locally rendered
     // thumbnails. Dispose previous native bitmaps after Compose releases
