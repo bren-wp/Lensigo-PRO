@@ -11,7 +11,6 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
 import java.io.IOException
-import java.util.Locale
 
 /** Local operations for media created by LENSIGO. Never uploads files. */
 object MediaActions {
@@ -59,13 +58,15 @@ object MediaActions {
                     out.use { ins.copyTo(it, bufferSize = 64 * 1024) }
                 }
                 if (Build.VERSION.SDK_INT >= 29) {
-                    resolver.update(destination, ContentValues().apply {
+                    if (resolver.update(destination, ContentValues().apply {
                         put(MediaStore.MediaColumns.IS_PENDING, 0)
-                    }, null, null)
+                    }, null, null) != 1) {
+                        throw IOException("Kopija nije objavljena u galeriji")
+                    }
                 }
                 destination
             } catch (e: Exception) {
-                resolver.delete(destination, null, null)
+                runCatching { resolver.delete(destination, null, null) }
                 throw e
             }
         }

@@ -5,7 +5,6 @@ import android.os.Build
 import android.provider.MediaStore
 import android.content.Intent
 import android.graphics.Bitmap
-import android.net.Uri
 import android.widget.ImageView
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
@@ -29,7 +28,6 @@ import androidx.compose.material.icons.filled.PlayArrow
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material.icons.filled.MoreHoriz
 import androidx.compose.material.icons.filled.Favorite
-import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.FileDownload

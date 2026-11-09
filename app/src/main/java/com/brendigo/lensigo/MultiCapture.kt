@@ -1,6 +1,5 @@
 package com.brendigo.lensigo
 
-import android.content.ContentValues
 import android.content.Context
 import android.graphics.Bitmap
 import android.graphics.Canvas
@@ -8,14 +7,10 @@ import android.graphics.Color
 import android.graphics.Paint
 import android.graphics.Rect
 import android.graphics.RectF
-import android.os.Build
-import android.provider.MediaStore
 import android.net.Uri
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
-import java.io.IOException
-import kotlin.math.max
 
 /**
  * Guided, fixed-overlap horizontal montage. Deliberately does not claim

@@ -9,7 +9,6 @@ import android.graphics.Matrix
 import android.graphics.BitmapFactory
 import androidx.exifinterface.media.ExifInterface
 import kotlin.math.max
-import kotlin.math.min
 
 /** Reusable local, offline filters. Never claims to improve sensor resolution. */
 enum class LensFilter(val title: String) {
