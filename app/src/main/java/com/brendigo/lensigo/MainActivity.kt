@@ -849,7 +849,14 @@ private fun LensigoApplication() {
                         Toast.makeText(context, "Snimanje nije uspjelo: " + event.error,
                             Toast.LENGTH_LONG).show()
                     } else {
-                        Toast.makeText(context, "Video spremljen", Toast.LENGTH_SHORT).show()
+                        val savedUri = event.outputResults.outputUri
+                        scope.launch {
+                            val measured = withContext(Dispatchers.IO) {
+                                VideoFileInspector.inspect(context, savedUri)
+                            }
+                            Toast.makeText(context, "Video spremljen · " + measured,
+                                Toast.LENGTH_LONG).show()
+                        }
                     }
                 }
             }
