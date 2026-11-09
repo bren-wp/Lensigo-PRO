@@ -61,3 +61,10 @@ A screenshot score is valid only for the specific device settings used to captur
 - Tablet 800dp na 2×: četiri stupca, dva reda visine 131dp, banner 218dp, galerija 57dp.
 - Potvrditi na uređaju: pune četiri mobilne kartice po vertikali, bez prisilnog preklapanja Gallery akcije, pri povećanom fontu dostupnost svih načina rada pomicanjem.
 - Izvorni PNG-ovi nisu screenshotovi stvarno pokrenutog Android UI-ja; ne označavati kao vizualno 1:1.
+
+## Navigacija nakon uklanjanja zaslona Privatnost
+
+- Iz svih Compose ruta i Android back obrade uklonjen je `Screen.PRIVACY`, zaseban zaslon i povratno stanje; zaštite lokacije, EXIF-a i sustavnih dozvola ostaju u odgovarajućim stvarnim funkcijama.
+- Otkriven i uklonjen rubni navigacijski problem: zupčanik na `O aplikaciji` i `Licence` otvarao je Postavke, ali je Back pogrešno vodio prema prethodnoj kameri. Novi `shouldRememberSettingsOrigin` osigurava da povratak iz Postavki ide na točan izvor (uključujući Welcome, Permissions, About i Licences), dok povratak iz dubokog `Camera Settings` ne prepisuje izvor. JVM testovi štite ovu logiku.
+- U Home ekranu vizualni gumb galerije i dalje ima izvornih 40dp na mobitelu, ali prozirno interaktivno područje sada ima 48dp, a Brendigo simbol minimalno 48dp.
+- Ikone testirati na OEM launcherima: Pixel (okrugla maska), Samsung (squircle), Xiaomi, te Android 7 stari PNG; nakon ažuriranja pojedini launcheri trebaju osvježavanje cachea ikona. Sama verzija koda ne dokazuje 1:1 maskiranje bez stvarne snimke početnog zaslona uređaja.

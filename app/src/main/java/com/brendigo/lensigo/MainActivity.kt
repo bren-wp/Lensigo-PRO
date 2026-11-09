@@ -99,7 +99,11 @@ private val Blue = Color(0xFF2E83FF)
 private val Muted = Color(0xFF9DB5C4)
 private val White = Color(0xFFF7FCFF)
 
-private enum class Screen { SPLASH, WELCOME, PERMISSIONS, HOME, CAMERA, GALLERY, VIEWER, SETTINGS, CAMERA_SETTINGS, ABOUT, LICENCES }
+internal enum class Screen { SPLASH, WELCOME, PERMISSIONS, HOME, CAMERA, GALLERY, VIEWER, SETTINGS, CAMERA_SETTINGS, ABOUT, LICENCES }
+
+internal fun shouldRememberSettingsOrigin(current: Screen, next: Screen): Boolean =
+    next == Screen.SETTINGS && current != Screen.SETTINGS &&
+        current != Screen.CAMERA_SETTINGS
 internal enum class CameraMode(val title: String) {
     VIDEO("VIDEO"), PHOTO("FOTO"), PRO("PRO"), NIGHT("NOĆ"),
     PORTRAIT("PORTRET"), PANORAMA("PANORAMA"), DUAL("DUAL"), FILTERS("FILTERI")
@@ -938,10 +942,7 @@ private fun LensigoApplication() {
             shutterTimer = null
             countdown = 0
         }
-        if (next == Screen.SETTINGS && screen !in setOf(
-            Screen.SETTINGS, Screen.CAMERA_SETTINGS,
-            Screen.ABOUT, Screen.LICENCES
-        )) {
+        if (shouldRememberSettingsOrigin(screen, next)) {
             settingsReturnScreen = screen
         }
         if (next == Screen.ABOUT && screen !in setOf(
