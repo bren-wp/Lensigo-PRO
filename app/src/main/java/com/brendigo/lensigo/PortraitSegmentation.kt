@@ -75,13 +75,17 @@ internal object PortraitSegmentation {
             for (y in 0 until height) {
                 source.getPixels(original, 0, width, 0, y, width, 1)
                 blurred.getPixels(soft, 0, width, 0, y, width, 1)
-                val my = ((y.toLong() * maskHeight) / height).toInt()
-                    .coerceIn(0, maskHeight - 1)
-                val row = my * maskWidth
+                val maskY = (y.toFloat() / (height - 1).coerceAtLeast(1)) *
+                    (maskHeight - 1)
                 for (x in 0 until width) {
-                    val mx = ((x.toLong() * maskWidth) / width).toInt()
-                        .coerceIn(0, maskWidth - 1)
-                    val foreground = ((conf[row + mx] - .25f) / .50f).coerceIn(0f, 1f)
+                    // Bilinear mask sampling avoids jagged nearest-neighbor
+                    // person outlines when the 512px ML mask is displayed
+                    // and exported at multi-megapixel resolution.
+                    val maskX = (x.toFloat() / (width - 1).coerceAtLeast(1)) *
+                        (maskWidth - 1)
+                    val foreground = SegmentationMaskSampling.foreground(
+                        conf, maskWidth, maskHeight, maskX, maskY
+                    )
                     val backgroundAlpha = (1f - foreground) * amount
                     val a = original[x]
                     val b = soft[x]
