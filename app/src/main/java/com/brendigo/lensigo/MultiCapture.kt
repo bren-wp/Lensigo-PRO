@@ -71,8 +71,39 @@ object PanoramaComposer {
                         val relative = lastScaled?.let {
                             PanoramaRegistration.estimate(it,currentScaled,advance)
                         } ?: Matrix().apply { setTranslate(advance.toFloat(),0f) }
-                        accumulated = Matrix().apply {
-                            setConcat(accumulated,relative)
+                        val proposed = Matrix().apply {
+                            setConcat(accumulated, relative)
+                        }
+                        val projected = floatArrayOf(
+                            0f, 0f, fullWidth.toFloat(), 0f,
+                            0f, targetHeight.toFloat(),
+                            fullWidth.toFloat(), targetHeight.toFloat()
+                        )
+                        proposed.mapPoints(projected)
+                        val surface = checkNotNull(output)
+                        if (PanoramaOutputBounds.fits(
+                                projected, surface.width, surface.height
+                            )) {
+                            accumulated = proposed
+                        } else {
+                            // A plausible pairwise homography can still drift
+                            // off canvas when transforms are chained. Do not
+                            // silently crop the newest frame or save black gaps.
+                            val fallback = Matrix().apply {
+                                setConcat(accumulated, Matrix().apply {
+                                    setTranslate(advance.toFloat(), 0f)
+                                })
+                            }
+                            val fallbackCorners = floatArrayOf(
+                                0f, 0f, fullWidth.toFloat(), 0f,
+                                0f, targetHeight.toFloat(),
+                                fullWidth.toFloat(), targetHeight.toFloat()
+                            )
+                            fallback.mapPoints(fallbackCorners)
+                            check(PanoramaOutputBounds.fits(
+                                fallbackCorners, surface.width, surface.height
+                            )) { "Panorama je izvan granica kadra; pokušaj ponovno" }
+                            accumulated = fallback
                         }
                     }
                     val paint = Paint(Paint.FILTER_BITMAP_FLAG or Paint.ANTI_ALIAS_FLAG)

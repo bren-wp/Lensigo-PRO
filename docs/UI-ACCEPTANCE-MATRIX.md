@@ -48,3 +48,7 @@ unfavorable controls with broad masks.
 - AAB signed with production upload key; current preview AAB is **unsigned**.
 - Full pixel-perfect 1:1 can be claimed only for the exactly matched
   screen/viewport pairs whose full-frame diff supports it.
+
+## Dodatna provjera perspektivne panorame (9. 11. 2026.)
+
+Postojeći `PanoramaRegistration.estimate` koristi lokalno podudaranje značajki i projektivni RANSAC. Pronađen je rubni slučaj: čak i ako je homografija **pojedinačnog para** razumna, ulančane transformacije 3–5 kadrova mogu pomaknuti zadnji kadar izvan unaprijed alociranog raspona ili visine. Prethodni `Canvas` tiho bi odrezao taj kadar i pohranio nepotpunu panoramu. `PanoramaComposer` sada testira sve četiri preslikane koordinate novog kadra i pri izlasku iz platna koristi sigurno prethodno vodeno preklapanje; ako čak i ono ne stane, prekida snimanje i prijavljuje grešku umjesto spremanja oštećene fotografije. `PanoramaOutputBoundsTest` provjerava horizontalno/vertikalno odrezivanje, NaN/Infinity, granične i neispravne dimenzije. Stvarni vizualni rezultat, teksture i paralaksa još zahtijevaju fotografije s različitih uređaja.
