@@ -37,6 +37,8 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.delay
+import kotlinx.coroutines.currentCoroutineContext
+import kotlinx.coroutines.ensureActive
 import kotlinx.coroutines.withContext
 
 private val FilterCyan = Color(0xFF00D4FF)
@@ -58,6 +60,9 @@ internal fun LensigoFilterPreviewStrip(
     val context = LocalContext.current
     var frameNumber by remember(previewView) { mutableIntStateOf(0) }
     LaunchedEffect(previewView) {
+        // No camera surface: the startup fallback never changes and should
+        // not regenerate all thumbnails every 1.8 seconds.
+        if (previewView == null) return@LaunchedEffect
         while (true) {
             delay(1800)
             frameNumber++
@@ -76,20 +81,40 @@ internal fun LensigoFilterPreviewStrip(
             try {
                 val maxEdge = maxOf(frame.width, frame.height).coerceAtLeast(1)
                 val scale = 160f / maxEdge
-                Bitmap.createScaledBitmap(
+                val scaled = Bitmap.createScaledBitmap(
                     frame, (frame.width * scale).toInt().coerceAtLeast(1),
                     (frame.height * scale).toInt().coerceAtLeast(1), true
                 )
+                // createScaledBitmap may return its input unchanged if the
+                // requested size matches the 160px preview. The original
+                // PreviewView snapshot is released below, so take ownership
+                // of a separate buffer in this edge case.
+                if (scaled === frame)
+                    frame.copy(Bitmap.Config.ARGB_8888, false) else scaled
             } finally { frame.recycle() }
         } else BitmapFactory.decodeResource(context.resources,
             R.drawable.lensigo_home_hero)
         if (source != null) {
             try {
                 val generated = withContext(Dispatchers.Default) {
-                    LensFilter.entries.associateWith { filter ->
-                        FilterEngine.apply(
-                            source, PhotoLook(filter = filter, intensity = intensity)
-                        ).asImageBitmap()
+                    val owned = LinkedHashMap<LensFilter, ImageBitmap>()
+                    try {
+                        for (filter in LensFilter.entries) {
+                            currentCoroutineContext().ensureActive()
+                            owned[filter] = FilterEngine.apply(
+                                source, PhotoLook(filter = filter, intensity = intensity)
+                            ).asImageBitmap()
+                        }
+                        currentCoroutineContext().ensureActive()
+                        owned
+                    } catch (error: Throwable) {
+                        // A mid-loop processing failure or coroutine
+                        // cancellation must release completed filter buffers.
+                        owned.values.forEach { bitmap ->
+                            val native = bitmap.asAndroidBitmap()
+                            if (!native.isRecycled) native.recycle()
+                        }
+                        throw error
                     }
                 }
                 value = generated

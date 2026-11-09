@@ -56,3 +56,7 @@ Postojeći `PanoramaRegistration.estimate` koristi lokalno podudaranje značajki
 ## Portret — korekcija segmentacijskih rubova
 
 Postojeći projekt već ima stvarni lokalni ML Kit model za osobe. Referentni portretni obris mogao je odstupati zato što je maska iz rezolucije ~512px na višemegapikselnu fotografiju preslikavana **nearest-neighbor** metodom (blokasti rubovi kose/ruku). Uvedeno je bilinearno očitavanje četiri susjedna uzorka maske, uz eksplicitne provjere NaN/Infinity i fail-safe zaštitu lika. JVM testovi provjeravaju interpolaciju i granične vrijednosti. Ovo poboljšava obradu, ali bez testnih fotografija i Android snimaka **nije dokazana 1:1 podudarnost** s prikazom 09 Portrait.
+
+## 12 Filters — zaustavljanje pozadinskog rada i sigurnost sličica
+
+Pronađena dva rubna slučaja u postojećoj stvarnoj implementaciji live CameraX thumbnailova: (1) `PreviewView.bitmap` može vratiti točno 160px bitmap, kada `Bitmap.createScaledBitmap` vrati **istu instancu**, koju je stari kod odmah reciklirao prije korištenja; (2) kada korisnik brzo mijenja jačinu filtra ili zatvori ekran, neuspjeh/cancel usred generiranja 12 sličica mogao je zadržati prethodno alocirane bitmape bez čišćenja. Sada se identična instanca po potrebi kopira prije oslobađanja izvornika, parcijalni set se čisti pri grešci/cancelu, a kad nema živog PreviewView-a ne vrti se beskoristan periodični posao. Live senzorski kadar i postojeći filteri ostaju stvarne, ne sintetizirane funkcije. Još treba usporediti stvarne screenshotove 12 Filters s izvornim PNG-om.
