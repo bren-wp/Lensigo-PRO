@@ -215,6 +215,8 @@ internal fun LensigoCameraSettingsScreen(
     preferSD: Boolean,
     prefer60Fps: Boolean,
     fps60Supported: Boolean,
+    eisEnabled: Boolean,
+    eisSupported: Boolean,
     noise: Boolean,
     sharpen: Boolean,
     lowMemory: Boolean,
@@ -229,6 +231,7 @@ internal fun LensigoCameraSettingsScreen(
     onGrid: (Boolean) -> Unit,
     onSD: (Boolean) -> Unit,
     on60Fps: (Boolean) -> Unit,
+    onEis: (Boolean) -> Unit,
     onNoise: (Boolean) -> Unit,
     onSharpen: (Boolean) -> Unit,
     onLowMemory: (Boolean) -> Unit,
@@ -297,7 +300,12 @@ internal fun LensigoCameraSettingsScreen(
                             } else null)
                         SettingsDivider()
                         SettingsItem(Icons.Default.Tune, "Stabilizacija",
-                            "Ovisi o podršci uređaja", "Uređaj")
+                            if (eisSupported) "Elektronička stabilizacija videosnimke"
+                            else "Nije potvrđena na ovom senzoru",
+                            if (eisEnabled && eisSupported) "Uključena" else "Isključena",
+                            onClick = if (eisSupported) {
+                                { onEis(!eisEnabled) }
+                            } else null)
                         SettingsDivider()
                         SettingsItem(Icons.Default.Mic, "Snimanje zvuka",
                             if (hasMicrophone) "Mikrofon" else "Potrebna je dozvola za mikrofon",

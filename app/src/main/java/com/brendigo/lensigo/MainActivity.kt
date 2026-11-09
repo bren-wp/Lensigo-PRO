@@ -2,6 +2,7 @@ package com.brendigo.lensigo
 
 import android.Manifest
 import android.hardware.camera2.CameraCharacteristics
+import android.hardware.camera2.CaptureRequest
 import android.util.Range
 import androidx.camera.camera2.interop.Camera2CameraInfo
 import androidx.camera.camera2.interop.ExperimentalCamera2Interop
@@ -198,6 +199,8 @@ private fun LensigoApplication() {
     var aspectWide by remember { mutableStateOf(photoAspectWide) }
     var preferSD by remember { mutableStateOf(prefs.getBoolean("video_sd", false)) }
     var prefer60Fps by remember { mutableStateOf(prefs.getBoolean("video_60fps", false)) }
+    var eisEnabled by remember { mutableStateOf(prefs.getBoolean("video_stabilization", false)) }
+    var eisSupported by remember { mutableStateOf(false) }
     var rawEnabled by remember { mutableStateOf(prefs.getBoolean("raw_jpeg", false)) }
     var rawSupported by remember { mutableStateOf(false) }
     var fps60Supported by remember { mutableStateOf(false) }
@@ -356,7 +359,7 @@ private fun LensigoApplication() {
         portraitBlur = if (mode == CameraMode.PORTRAIT && !vendorEffect) portraitBlur else 0f
     )
     DisposableEffect(previewView, selfieView, screen, front, mode, aspectWide, preferSD,
-        prefer60Fps, rawEnabled, dualStep, nightProcessing, hasCameraPermission) {
+        prefer60Fps, eisEnabled, rawEnabled, dualStep, nightProcessing, hasCameraPermission) {
         val view = previewView
         if (view == null || screen != Screen.CAMERA || !hasCameraPermission) {
             onDispose { }
@@ -418,9 +421,18 @@ private fun LensigoApplication() {
                         fps60Supported = CameraControlRules.supports60Fps(
                             availableFps.map { it.lower..it.upper }
                         )
+                        eisSupported = runCatching {
+                            Camera2CameraInfo.from(provider.getCameraInfo(selector))
+                                .getCameraCharacteristic(CameraCharacteristics
+                                    .CONTROL_AVAILABLE_VIDEO_STABILIZATION_MODES)
+                                ?.contains(CaptureRequest.CONTROL_VIDEO_STABILIZATION_MODE_ON)
+                                == true
+                        }.getOrDefault(false)
                         val canRequest60 = prefer60Fps && fps60Supported
                         val requested = VideoCapture.Builder(recorder).apply {
                             if (canRequest60) setTargetFrameRate(Range(60, 60))
+                            if (eisEnabled && eisSupported)
+                                setVideoStabilizationEnabled(true)
                         }.build()
                         try {
                             onBound(provider.bindToLifecycle(lifecycle, selector, preview, requested), false)
@@ -1371,6 +1383,7 @@ private fun LensigoApplication() {
                     grid = gridEnabled, photoAspectWide = photoAspectWide,
                     preferSD = preferSD, prefer60Fps = prefer60Fps,
                     fps60Supported = fps60Supported,
+                    eisEnabled = eisEnabled, eisSupported = eisSupported,
                     noise = softenNoise, sharpen = sharpen,
                     lowMemory = lowMemory, hasMicrophone = hasMicPermission,
                     recordAudio = recordAudio, nightProcessing = nightProcessing,
@@ -1389,6 +1402,10 @@ private fun LensigoApplication() {
                     on60Fps = {
                         prefer60Fps = it
                         prefs.edit().putBoolean("video_60fps", it).apply()
+                    },
+                    onEis = {
+                        eisEnabled = it
+                        prefs.edit().putBoolean("video_stabilization", it).apply()
                     },
                     onNoise = { softenNoise = it; prefs.edit().putBoolean("noise", it).apply() },
                     onSharpen = { sharpen = it; prefs.edit().putBoolean("sharpen", it).apply() },
