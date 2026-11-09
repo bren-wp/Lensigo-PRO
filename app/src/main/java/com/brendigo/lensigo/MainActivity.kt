@@ -1027,28 +1027,47 @@ private fun LensigoApplication() {
                         }
                         Text(when(mode) {
                             CameraMode.VIDEO -> if (preferSD) "SD" else "AUTO"
-                            CameraMode.PRO -> "JPEG"
+                            CameraMode.PRO -> if (rawEnabled && rawSupported) "RAW+JPEG" else "JPEG"
+                            CameraMode.PHOTO -> if (hdrEnabled && vendorEffect) "HDR" else "AUTO"
                             CameraMode.NIGHT -> "NOĆ"
                             CameraMode.PORTRAIT -> if (vendorEffect) "BOKEH" else "PORTRET"
                             else -> "AUTO"
                         },
                             color = White, fontWeight = FontWeight.SemiBold,
                             modifier = Modifier.clickable(
-                                enabled = (mode == CameraMode.VIDEO && !isRecording) ||
+                                enabled = !processing && !isRecording && (
+                                    mode == CameraMode.VIDEO ||
+                                    (mode == CameraMode.PRO && rawSupported) ||
+                                    (mode == CameraMode.PHOTO && hdrSupported) ||
                                     (mode == CameraMode.NIGHT && !vendorEffect &&
-                                        exposureMax > exposureMin),
+                                        exposureMax > exposureMin)),
                                 role = Role.Button,
-                                onClickLabel = if (mode == CameraMode.NIGHT) {
-                                    if (nightExposureExpanded) "Sakrij ekspoziciju"
-                                    else "Podesi noćnu ekspoziciju"
-                                } else "Promijeni video kvalitetu"
+                                onClickLabel = when (mode) {
+                                    CameraMode.PHOTO -> if (hdrEnabled) "Isključi HDR" else "Uključi HDR"
+                                    CameraMode.PRO -> if (rawEnabled) "Isključi RAW + JPEG"
+                                        else "Uključi RAW + JPEG"
+                                    CameraMode.NIGHT -> if (nightExposureExpanded)
+                                        "Sakrij ekspoziciju" else "Podesi noćnu ekspoziciju"
+                                    else -> "Promijeni video kvalitetu"
+                                }
                             ) {
-                                if (mode == CameraMode.VIDEO && !isRecording) {
-                                    preferSD = !preferSD
-                                    prefs.edit().putBoolean("video_sd", preferSD).apply()
-                                } else if (mode == CameraMode.NIGHT && !vendorEffect &&
-                                    exposureMax > exposureMin) {
-                                    nightExposureExpanded = !nightExposureExpanded
+                                when {
+                                    mode == CameraMode.VIDEO -> {
+                                        preferSD = !preferSD
+                                        prefs.edit().putBoolean("video_sd", preferSD).apply()
+                                    }
+                                    mode == CameraMode.PRO && rawSupported -> {
+                                        rawEnabled = !rawEnabled
+                                        prefs.edit().putBoolean("raw_jpeg", rawEnabled).apply()
+                                    }
+                                    mode == CameraMode.PHOTO && hdrSupported -> {
+                                        hdrEnabled = !hdrEnabled
+                                        prefs.edit().putBoolean("hdr_processing", hdrEnabled).apply()
+                                    }
+                                    mode == CameraMode.NIGHT && !vendorEffect &&
+                                        exposureMax > exposureMin -> {
+                                        nightExposureExpanded = !nightExposureExpanded
+                                    }
                                 }
                             })
                         Text(if (aspectWide) "16:9" else "4:3",

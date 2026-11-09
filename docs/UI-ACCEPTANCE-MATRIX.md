@@ -64,3 +64,7 @@ Pronađena dva rubna slučaja u postojećoj stvarnoj implementaciji live CameraX
 ## HDR Photo — stvarna podrška senzora i izvorni ekran 17
 
 Referenca 17 sada ima **djelotvornu HDR kontrolu** samo kada `ExtensionsManager.isExtensionAvailable(selector, ExtensionMode.HDR)` potvrdi aktivni senzor. Odabrana postavka `hdr_processing` stvarno mijenja CameraX kameru u `ExtensionMode.HDR` pri sljedećem ulazu u način FOTO. Ako ekstenzija ili kombinacija preview/capture nije podržana, koristi se obična kamera bez lažne HDR oznake. Provjera se obnavlja po odabranom prednjem/stražnjem senzoru. Budući da dostupnost ovisi o **stvarno aktivnoj kameri**, UI prije otvaranja FOTO načina prikazuje neprovjerenu dostupnost i ne nudi lažni prekidač. Ovo nije multi-frame softverski HDR na svakom Android uređaju, nego hardverski uvjetovan CameraX HDR. Potvrdu izlaznog kadra i referentne vizualne slike i dalje zahtijeva fizički uređaj.
+
+## 05 Photo / 07 Pro — stvarno aktivne HDR/RAW oznake u kamerinom HUD-u
+
+HUD je prije prikazivao `AUTO` za HDR Photo i stalni `JPEG` za Pro čak i kada je aktivno snimanje RAW+DNG. Sada prikazuje `HDR` **isključivo nakon uspješne CameraX HDR ekstenzije** i `RAW+JPEG` **isključivo kada trenutna kamera podržava i odabrala je RAW_JPEG format**. Oznake postaju akcije samo uz aktivno potvrđene hardverske mogućnosti; dodir stvarno mijenja spremljene postavke i ponovo veže CameraX na ispravan output format/extension. Nepodržani senzori ne prikazuju djelotvornu kontrolu. Nije umjetno obećana RAW ili HDR podrška svim telefonima.
