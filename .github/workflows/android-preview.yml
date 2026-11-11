@@ -47,6 +47,20 @@ jobs:
           if [ -f "$REPORT" ]; then cat "$REPORT"; fi
       - name: Verify package format and absence of unverified native code
         run: python tools/play_package_check.py app/build/outputs/apk/debug/app-debug.apk app/build/outputs/bundle/release/app-release.aab
+      - name: Prepare checksums and accurate preview release notes
+        run: |
+          sha256sum app/build/outputs/apk/debug/app-debug.apk | awk '{print $1 "  app-debug.apk"}' > SHA256SUMS.txt
+          sha256sum app/build/outputs/bundle/release/app-release.aab | awk '{print $1 "  app-release.aab"}' >> SHA256SUMS.txt
+          {
+            echo "LENSIGO v0.7.${{ github.run_number }} — Android preview"
+            echo
+            echo "Current commit: ${GITHUB_SHA}"
+            echo "Change: $(git log -1 --pretty=%s)"
+            echo
+            echo "Includes debug-signed APK and unsigned AAB; not a production/Play-signed release."
+            echo "App screenshots and 1:1 pixel equivalence require physical-device verification."
+            echo "SHA256SUMS.txt verifies downloaded APK/AAB integrity."
+          } > release-notes.md
       - uses: actions/upload-artifact@v4
         with:
           name: lensigo-android-preview
@@ -72,18 +86,18 @@ jobs:
           # report a successful release until the API confirms publication.
           for attempt in 1 2 3 4; do
             if gh release view "$TAG" >/dev/null 2>&1; then
-              if result=$(gh release upload "$TAG" app/build/outputs/apk/debug/*.apk app/build/outputs/bundle/release/*.aab --clobber 2>&1); then
+              if result=$(gh release upload "$TAG" app/build/outputs/apk/debug/*.apk app/build/outputs/bundle/release/*.aab SHA256SUMS.txt --clobber 2>&1); then
                 exit 0
               fi
             else
-              if result=$(gh release create "$TAG" app/build/outputs/apk/debug/*.apk app/build/outputs/bundle/release/*.aab --target "$GITHUB_SHA" --prerelease --title "LENSIGO $TAG · Android preview" --notes "LENSIGO $TAG: Removed the separate Privacy page while keeping local privacy protections. Launcher: original 512px icon on Android 7; dark-background adaptive icon on Android 8+; dedicated monochrome layer for themed Android icons; dark native splash on Android 12+. Onboarding now requires essential camera and legacy storage permissions; camera mode strip has full-height touch targets, Settings values wrap with large font sizes. Tests cover icon geometry, native splash theme, permission flow and navigation. Device screenshot pixel diff remains pending, so 0% visual deviation is not claimed. APK debug-signed, AAB unsigned." 2>&1); then
+              if result=$(gh release create "$TAG" app/build/outputs/apk/debug/*.apk app/build/outputs/bundle/release/*.aab SHA256SUMS.txt --target "$GITHUB_SHA" --prerelease --title "LENSIGO $TAG · Android preview" --notes-file release-notes.md 2>&1); then
                 exit 0
               fi
             fi
             printf '%s\n' "$result"
             if printf '%s' "$result" | grep -q "Resource not accessible by integration"; then
-              echo "::warning::GitHub denied release publication (HTTP 403). Build and APK/AAB artifacts are successful. Add a repository secret LENSIGO_RELEASE_TOKEN with Contents: write access; see docs/RELEASE-PUBLISHING.md."
-              exit 0
+              echo "::error::GitHub denied release publication (HTTP 403). APK/AAB remain in Actions artifacts, but release delivery FAILED. Configure LENSIGO_RELEASE_TOKEN (Contents: write); see docs/RELEASE-PUBLISHING.md."
+              exit 1
             fi
             if [ "$attempt" -eq 4 ]; then
               echo "::error::GitHub Release cannot be published with the current token permissions. APK/AAB remain available as Actions artifacts."
