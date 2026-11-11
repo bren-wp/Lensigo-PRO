@@ -1,38 +1,40 @@
 # LENSIGO — APK/AAB i GitHub Releases
 
-## Potvrđeno stanje (9. 11. 2026.)
+## Trenutačni postupak
 
-GitHub Actions run #93 izgradio je APK i AAB, izvršio unit/lint i
-package provjere te prenio artefakte, ali je posljednji korak `gh release
-create` dobio HTTP 403 (`Resource not accessible by integration`).
-To nije pogreška Android kompilacije. `GITHUB_TOKEN` u logu prijavljuje
-`Contents: write`, ali GitHub API ipak odbija objavu Releasesa.
-Bez dozvole za objavu izdanje se ne smije proglasiti uspješnim.
+GitHub Actions radi na push na `main` ili na ručni `workflow_dispatch`.
+Pipeline gradi APK/AAB, izvršava Android lint i unit testove te provjere
+paketa. Potom generira `SHA256SUMS.txt` i tekst izdanja prema stvarnom
+commitu, umjesto kopiranja zastarjelih opisa funkcija.
 
-## Objavljivanje novih izdanja
+**Objava je obvezan uvjet uspješne isporuke:** ako GitHub Releases API vrati
+HTTP 403 ili objava ne uspije nakon ponovljenih pokušaja, workflow završava
+pogreškom. Izgrađeni artefakti ostaju u Actions artifacts za dijagnostiku;
+to ne znači da je novo izdanje objavljeno.
 
-1. U postavkama repozitorija provjeriti **Settings → Actions → General →
-   Workflow permissions** i ograničenja organizacije ili vlasnika.
-2. Ako ugrađeni token ostaje blokiran, kreirati *fine-grained personal
-   access token* s pristupom **samo** repozitoriju `bren-wp/Lensigo-PRO`
-   i dozvolom `Contents: Read and write`. Ne stavljati token u kod,
-   issue, commit, README ili javni chat.
-3. Dodati token kao Actions secret pod imenom `LENSIGO_RELEASE_TOKEN`
-   u **Settings → Secrets and variables → Actions**.
-4. Pokrenuti novu radnju **Android Preview Release** na `main`
-   (`workflow_dispatch`) i provjeriti da je GitHub Release stvarno
-   objavljen sa `app-debug.apk` i `app-release.aab`.
+## Pristup objavi
 
-Ako izdavanje dobije odbijenicu 403, workflow označava **upozorenje**
-i čuva uspješne APK/AAB u **Actions → workflow run → Artifacts**.
-Svaki drugi problem objave nakon pokušaja ponavljanja i dalje prekida job.
+1. Provjeriti **Settings → Actions → General → Workflow permissions**
+   i postavke vlasnika/organizacije.
+2. Ako je ugrađeni `GITHUB_TOKEN` blokiran, stvoriti ograničeni fine-grained
+   token s `Contents: Read and write` **samo** za Lensigo-PRO.
+3. Spremiti ga kao GitHub Actions secret `LENSIGO_RELEASE_TOKEN`. Nikada ga
+   ne unositi u README, issue, commit ili log.
+4. Pokrenuti `Android Preview Release` na `main`, provjeriti zelene
+   build/test/publish korake i otvoriti odgovarajući GitHub Release.
 
-## Ispravna oznaka paketa
+## Integritet preuzetih datoteka
 
-- `app-debug.apk`: razvojno (debug) potpisan, primjeren za instalaciju/test.
-- `app-release.aab`: **nepotpisan** preview AAB, nije spreman za izravno
-  slanje u Google Play Console bez produkcijskog upload potpisa.
-- Google Play produkcija zahtijeva vlastiti sigurno pohranjen upload
-  ključ i odgovarajuće provjere u Play Consoleu.
-- Potpuna vizualna podudarnost 18 aktivnih zaslona za mobitel i tablet
-  ne smije se tvrditi bez odgovarajućih stvarnih screenshotova.
+Preuzeti `app-debug.apk`, `app-release.aab` i `SHA256SUMS.txt` u istu
+mapu i pokrenuti `sha256sum -c SHA256SUMS.txt`. Hash potvrđuje integritet
+preuzetih datoteka; ne potvrđuje autorstvo, reproducibilnost ili sigurnost.
+
+## Važno prije produkcije
+
+- `app-debug.apk` je **debug potpisan** i služi za testiranje.
+- `app-release.aab` je **nepotpisan**, pa nije spreman za Google Play.
+- Produkcijski AAB i APK moraju imati ispravan potpis/uplink ključ,
+  unaprijed provjeren kontinuitet paketa i `versionCode`.
+- Provjeriti ažurnost Google Play zahtjeva u trenutku objave.
+- 36 aktivnih zaslona (18 mobitel + 18 tablet) treba usporediti sa stvarnim
+  snimkama aplikacije; zeleni CI nije dokaz 1:1 izgleda.
