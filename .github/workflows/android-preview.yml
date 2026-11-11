@@ -67,6 +67,7 @@ jobs:
           path: |
             app/build/outputs/apk/debug/*.apk
             app/build/outputs/bundle/release/*.aab
+            SHA256SUMS.txt
       - name: Upload Android lint report
         uses: actions/upload-artifact@v4
         with:
@@ -75,7 +76,7 @@ jobs:
             app/build/reports/lint-results-debug.html
             app/build/reports/lint-results-debug.txt
           if-no-files-found: ignore
-      - name: Publish preview release when token has permission
+      - name: Publish verified preview release
         env:
           # Optional fine-grained PAT (Contents: read/write on this repo).
           # Without it, attempt the built-in token; artifacts are already uploaded.
