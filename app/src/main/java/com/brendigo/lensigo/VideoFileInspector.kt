@@ -31,15 +31,21 @@ internal object VideoFileInspector {
     }
 
     fun describe(width: Int?, height: Int?, fps: Float?): String {
-        val longEdge = maxOf(width ?: 0, height ?: 0)
-        val resolution = when {
-            longEdge >= 3800 -> "4K/UHD"
-            longEdge >= 2500 -> "QHD"
-            longEdge >= 1880 -> "Full HD"
-            longEdge >= 1250 -> "HD"
-            longEdge > 0 -> "SD"
-            else -> "rezolucija nepoznata"
+        // A long edge alone is insufficient: 3840 × 200 is not 4K video.
+        // Always report the *actual encoded dimensions*, including portrait
+        // recordings and uncommon aspect ratios, instead of a quality hint.
+        val valid = width != null && height != null && width > 0 && height > 0
+        val longEdge = if (valid) maxOf(width!!, height!!) else 0
+        val shortEdge = if (valid) minOf(width!!, height!!) else 0
+        val quality = when {
+            longEdge >= 3800 && shortEdge >= 2000 -> "4K/UHD"
+            longEdge >= 2500 && shortEdge >= 1400 -> "QHD"
+            longEdge >= 1880 && shortEdge >= 1000 -> "Full HD"
+            longEdge >= 1250 && shortEdge >= 650 -> "HD"
+            else -> "SD"
         }
+        val resolution = if (valid) "${width}×${height} ($quality)"
+            else "rezolucija nepoznata"
         val frameRate = if (fps != null && fps.isFinite() && fps in 1f..480f) {
             String.format(Locale.ROOT, "%.1f FPS", fps)
         } else "FPS nepoznat"

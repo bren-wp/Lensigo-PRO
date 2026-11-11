@@ -95,8 +95,12 @@ internal fun LensigoFilterPreviewStrip(
         } else BitmapFactory.decodeResource(context.resources,
             R.drawable.lensigo_home_hero)
         if (source != null) {
+            // Retain ownership across the dispatcher hand-off: if the UI
+            // producer is cancelled after the worker finishes but before
+            // withContext resumes, its completed bitmaps must be reclaimed.
+            var unpublished: Map<LensFilter, ImageBitmap>? = null
             try {
-                val generated = withContext(Dispatchers.Default) {
+                withContext(Dispatchers.Default) {
                     val owned = LinkedHashMap<LensFilter, ImageBitmap>()
                     try {
                         for (filter in LensFilter.entries) {
@@ -106,10 +110,10 @@ internal fun LensigoFilterPreviewStrip(
                             ).asImageBitmap()
                         }
                         currentCoroutineContext().ensureActive()
-                        owned
+                        unpublished = owned
                     } catch (error: Throwable) {
-                        // A mid-loop processing failure or coroutine
-                        // cancellation must release completed filter buffers.
+                        // A mid-loop processing failure or cancellation also
+                        // releases every image completed by this worker.
                         owned.values.forEach { bitmap ->
                             val native = bitmap.asAndroidBitmap()
                             if (!native.isRecycled) native.recycle()
@@ -117,8 +121,15 @@ internal fun LensigoFilterPreviewStrip(
                         throw error
                     }
                 }
-                value = generated
+                value = unpublished.orEmpty()
+                // UI owns these from this point. DisposableEffect releases
+                // them when the published preview set leaves composition.
+                unpublished = null
             } finally {
+                unpublished?.values?.forEach { bitmap ->
+                    val native = bitmap.asAndroidBitmap()
+                    if (!native.isRecycled) native.recycle()
+                }
                 if (!source.isRecycled) source.recycle()
             }
         } else value = emptyMap()
