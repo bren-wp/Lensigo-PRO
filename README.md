@@ -38,7 +38,18 @@ Galerija, pregled fotografija i videa, favoriti, izrezivanje, rotacija, kontrast
 Ovdje se objavljuju **isključivo izvorne PNG snimke pokrenute Android aplikacije**. Nikad ne zamjenjujemo screenshot dizajnerskim mockupom. Automatizirani emulator može snimiti zaslone koji ne zahtijevaju fizički senzor; njegovi kadrovi označeni su kao *emulator*, a ne fotografije s telefona.
 
 <!-- BEGIN REAL LENSIGO SCREENSHOTS -->
-Stvarne snimke još nisu potvrđene. Provjeri [Android screenshot workflow](https://github.com/bren-wp/Lensigo-PRO/actions/workflows/real-screenshots.yml). Galerija se automatski popunjava isključivo nakon uspješne provjere PNG-ova snimljenih naredbom `adb screencap`.
+**Stvarne snimke pokrenute aplikacije** — Android 15 emulator, 1080 × 2400 px, gustoća 480 dpi; stvarna kamera na fizičkom uređaju nije ovdje verificirana. Snimke nisu dizajnerski mockupovi.
+
+<p align="center">
+<img src="docs/screenshots/real/02_onboarding.png" alt="Stvarna Android emulator snimka — Dobrodošlica" width="190">
+<img src="docs/screenshots/real/03_permissions.png" alt="Stvarna Android emulator snimka — Dopuštenja" width="190">
+<img src="docs/screenshots/real/05_photo.png" alt="Stvarna Android emulator snimka — Foto način" width="190">
+<img src="docs/screenshots/real/04_home.png" alt="Stvarna Android emulator snimka — Početna" width="190">
+<img src="docs/screenshots/real/16_settings.png" alt="Stvarna Android emulator snimka — Postavke" width="190">
+<img src="docs/screenshots/real/13_gallery.png" alt="Stvarna Android emulator snimka — Galerija" width="190">
+</p>
+
+Izvor: `adb exec-out screencap -p`, GitHub Actions run `43122119096`. [Matrica za 1:1 mjerenje](docs/UI-ACCEPTANCE-MATRIX.md).
 <!-- END REAL LENSIGO SCREENSHOTS -->
 
 Pixel-perfect dokaz traži usporedbu **18 aktivnih zaslona za mobitel + 18 za tablet** pri jednakom viewportu, gustoći i skali fonta. Trenutno nema potvrde o 0% odstupanja. [Matrica vizualnih provjera](docs/UI-ACCEPTANCE-MATRIX.md).
