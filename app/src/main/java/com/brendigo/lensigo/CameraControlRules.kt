@@ -17,9 +17,10 @@ internal object CameraControlRules {
 
     fun shutterEnabled(
         permission: Boolean, processing: Boolean, countdown: Int,
-        videoMode: Boolean, recording: Boolean, captureReady: Boolean
+        videoMode: Boolean, recording: Boolean, captureReady: Boolean,
+        stoppingRecording: Boolean = false
     ): Boolean {
-        if (!permission || processing || countdown > 0) return false
+        if (!permission || processing || countdown > 0 || stoppingRecording) return false
         return if (videoMode) recording || captureReady else captureReady
     }
 

@@ -307,6 +307,8 @@ private fun LensigoApplication() {
     var videoCapture by remember { mutableStateOf<VideoCapture<Recorder>?>(null) }
     var recording by remember { mutableStateOf<Recording?>(null) }
     var isRecording by remember { mutableStateOf(false) }
+    // Waiting for CameraX Finalize: ignore repeated rapid stop presses.
+    var stoppingRecording by remember { mutableStateOf(false) }
     var recordingDurationNanos by remember { mutableLongStateOf(0L) }
     var processing by remember { mutableStateOf(false) }
     var currentExposure by remember { mutableIntStateOf(0) }
@@ -342,8 +344,10 @@ private fun LensigoApplication() {
                 shutterTimer?.cancel()
                 shutterTimer = null
                 countdown = 0
-                if (isRecording) {
+                if (isRecording && !stoppingRecording) {
+                    stoppingRecording = true
                     runCatching { currentRecording?.stop() }
+                        .onFailure { stoppingRecording = false }
                 }
             }
         }
@@ -352,7 +356,7 @@ private fun LensigoApplication() {
     }
     DisposableEffect(Unit) { onDispose {
         shutterTimer?.cancel()
-        currentRecording?.stop()
+        runCatching { currentRecording?.stop() }
     } }
 
     val look = PhotoLook(
@@ -674,20 +678,28 @@ private fun LensigoApplication() {
         val capture = photoCapture ?: return
         processing = true
         val file = createCaptureTempFile("lensigo_panorama_") ?: return
-        capture.takePicture(ImageCapture.OutputFileOptions.Builder(file).build(),
-            ContextCompat.getMainExecutor(context),
-            object : ImageCapture.OnImageSavedCallback {
-                override fun onImageSaved(result: ImageCapture.OutputFileResults) {
-                    panoramaParts.add(file)
-                    processing = false
-                    if (panoramaParts.size == PanoramaComposer.MAX_FRAMES) finishPanorama()
-                }
-                override fun onError(error: ImageCaptureException) {
-                    file.delete()
-                    processing = false
-                    Toast.makeText(context, error.localizedMessage, Toast.LENGTH_LONG).show()
-                }
-            })
+        try {
+            capture.takePicture(ImageCapture.OutputFileOptions.Builder(file).build(),
+                ContextCompat.getMainExecutor(context),
+                object : ImageCapture.OnImageSavedCallback {
+                    override fun onImageSaved(result: ImageCapture.OutputFileResults) {
+                        panoramaParts.add(file)
+                        processing = false
+                        if (panoramaParts.size == PanoramaComposer.MAX_FRAMES) finishPanorama()
+                    }
+                    override fun onError(error: ImageCaptureException) {
+                        file.delete()
+                        processing = false
+                        Toast.makeText(context, error.localizedMessage, Toast.LENGTH_LONG).show()
+                    }
+                })
+        } catch (error: Exception) {
+            // CameraX can reject a request before invoking its callback.
+            file.delete()
+            processing = false
+            Toast.makeText(context, "Panorama nije dostupna: " + error.localizedMessage,
+                Toast.LENGTH_LONG).show()
+        }
     }
     fun captureDual() {
         if (processing || !hasCameraPermission) return
@@ -695,10 +707,11 @@ private fun LensigoApplication() {
         val capture = photoCapture ?: return
         processing = true
         val file = createCaptureTempFile("lensigo_dual_") ?: return
-        capture.takePicture(ImageCapture.OutputFileOptions.Builder(file).build(),
-            ContextCompat.getMainExecutor(context),
-            object : ImageCapture.OnImageSavedCallback {
-                override fun onImageSaved(result: ImageCapture.OutputFileResults) {
+        try {
+            capture.takePicture(ImageCapture.OutputFileOptions.Builder(file).build(),
+                ContextCompat.getMainExecutor(context),
+                object : ImageCapture.OnImageSavedCallback {
+                    override fun onImageSaved(result: ImageCapture.OutputFileResults) {
                     if (!concurrentDual && dualStep == 0) {
                         firstDualPhoto = file
                         dualStep = 1
@@ -734,18 +747,27 @@ private fun LensigoApplication() {
                             dualStep = 0
                             return
                         }
-                        frontCapture.takePicture(ImageCapture.OutputFileOptions.Builder(selfie).build(),
-                            ContextCompat.getMainExecutor(context),
-                            object : ImageCapture.OnImageSavedCallback {
-                                override fun onImageSaved(result: ImageCapture.OutputFileResults) {
-                                    composite(file, selfie)
-                                }
-                                override fun onError(error: ImageCaptureException) {
-                                    file.delete(); selfie.delete(); processing = false
-                                    Toast.makeText(context, "Prednja kamera: " + error.message,
-                                        Toast.LENGTH_LONG).show()
-                                }
-                            })
+                        try {
+                            frontCapture.takePicture(
+                                ImageCapture.OutputFileOptions.Builder(selfie).build(),
+                                ContextCompat.getMainExecutor(context),
+                                object : ImageCapture.OnImageSavedCallback {
+                                    override fun onImageSaved(result: ImageCapture.OutputFileResults) {
+                                        composite(file, selfie)
+                                    }
+                                    override fun onError(error: ImageCaptureException) {
+                                        file.delete(); selfie.delete(); processing = false
+                                        Toast.makeText(context, "Prednja kamera: " + error.message,
+                                            Toast.LENGTH_LONG).show()
+                                    }
+                                })
+                        } catch (error: Exception) {
+                            file.delete(); selfie.delete()
+                            firstDualPhoto?.delete(); firstDualPhoto = null
+                            dualStep = 0; processing = false
+                            Toast.makeText(context, "Prednja kamera nije dostupna: " +
+                                error.localizedMessage, Toast.LENGTH_LONG).show()
+                        }
                     } else {
                         val back = firstDualPhoto
                         if (back == null) { file.delete(); processing = false; return }
@@ -757,6 +779,13 @@ private fun LensigoApplication() {
                     Toast.makeText(context, "Dual: " + error.message, Toast.LENGTH_LONG).show()
                 }
             })
+        } catch (error: Exception) {
+            file.delete()
+            firstDualPhoto?.delete(); firstDualPhoto = null
+            dualStep = 0; processing = false
+            Toast.makeText(context, "Dual kamera nije dostupna: " + error.localizedMessage,
+                Toast.LENGTH_LONG).show()
+        }
     }
     fun capturePhoto() {
         if (processing) return
@@ -837,9 +866,21 @@ private fun LensigoApplication() {
     }
     fun toggleRecording() {
         if (isRecording) {
-            recording?.stop()
+            if (!stoppingRecording) {
+                stoppingRecording = true
+                val current = recording
+                val stopped = runCatching { current?.stop() }
+                if (current == null || stopped.isFailure) {
+                    recording = null
+                    isRecording = false
+                    stoppingRecording = false
+                    Toast.makeText(context, "Snimanje se nije moglo zaustaviti",
+                        Toast.LENGTH_LONG).show()
+                }
+            }
             return
         }
+        if (stoppingRecording) return
         if (!hasStoragePermission) { requestPermissions(); return }
         val capture = videoCapture ?: return
         val values = ContentValues().apply {
@@ -864,6 +905,7 @@ private fun LensigoApplication() {
                 }
                 if (event is VideoRecordEvent.Finalize) {
                     isRecording = false
+                    stoppingRecording = false
                     recording = null
                     if (event.hasError()) {
                         // CameraX can leave partial media behind after a failed
@@ -889,6 +931,8 @@ private fun LensigoApplication() {
             isRecording = true
         } catch (e: Exception) {
             isRecording = false
+            stoppingRecording = false
+            recording = null
             Toast.makeText(context, "Video nije dostupan: " + e.localizedMessage, Toast.LENGTH_LONG).show()
         }
     }
@@ -1321,11 +1365,13 @@ private fun LensigoApplication() {
                                     hasCameraPermission, processing, countdown,
                                     mode == CameraMode.VIDEO, isRecording,
                                     if (mode == CameraMode.VIDEO)
-                                        videoCapture != null else photoCapture != null
+                                        videoCapture != null else photoCapture != null,
+                                    stoppingRecording
                                 ),
                                 role = Role.Button,
                                 onClickLabel = if (mode == CameraMode.VIDEO) {
-                                    if (isRecording) "Zaustavi snimanje" else "Pokreni snimanje"
+                                    if (stoppingRecording) "Završavanje snimanja"
+                                    else if (isRecording) "Zaustavi snimanje" else "Pokreni snimanje"
                                 } else "Snimi fotografiju"
                             ) {
                                 onShutter()

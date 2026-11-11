@@ -26,7 +26,8 @@ internal object VideoFileInspector {
         } catch (_: Exception) {
             "metapodaci nisu dostupni"
         } finally {
-            extractor.release()
+            // OEM retrievers may throw even when closing a damaged MP4.
+            runCatching { extractor.release() }
         }
     }
 

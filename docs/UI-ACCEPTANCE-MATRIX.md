@@ -70,3 +70,18 @@ Referenca 17 sada ima **djelotvornu HDR kontrolu** samo kada `ExtensionsManager.
 ## 05 Photo / 07 Pro — stvarno aktivne HDR/RAW oznake u kamerinom HUD-u
 
 HUD je prije prikazivao `AUTO` za HDR Photo i stalni `JPEG` za Pro čak i kada je aktivno snimanje RAW+DNG. Sada prikazuje `HDR` **isključivo nakon uspješne CameraX HDR ekstenzije** i `RAW+JPEG` **isključivo kada trenutna kamera podržava i odabrala je RAW_JPEG format**. Oznake postaju akcije samo uz aktivno potvrđene hardverske mogućnosti; dodir stvarno mijenja spremljene postavke i ponovo veže CameraX na ispravan output format/extension. Nepodržani senzori ne prikazuju djelotvornu kontrolu. Nije umjetno obećana RAW ili HDR podrška svim telefonima.
+
+
+## Autentične marketinške snimke (nastavak, studeni 2026.)
+
+Workflow `.github/workflows/real-screenshots.yml` se pokreće nakon uspješnog
+preview builda i može se pokrenuti ručno. Instalira **stvarni debug APK** u
+Android emulator, pokreće aplikaciju od početka i snima vidljive Compose zaslone
+pomoću `adb exec-out screencap -p`. Svaka PNG datoteka mora proći validaciju
+potpisa i dimenzija; za očekivani prikaz UI-ja provjerava se Android accessibility
+hijerarhija. Pri uspjehu snimke se pohranjuju u `docs/screenshots/real/`, a
+README dobiva stvarne slike i oznaku da su iz emulatora. Promjena samo dokumentacije
+koristi `[skip ci]`, bez novog bespotrebnog binary builda.
+
+To nije 1:1 verifikacija, zamjena za referentne slike ni dokaz kvalitete
+fizičke kamere. U README ne unositi slike koje nisu snimljene iz pokrenute aplikacije.

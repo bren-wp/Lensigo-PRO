@@ -30,6 +30,9 @@ class CameraControlRulesTest {
     @Test fun videoMayStopWhenRecordingEvenAfterUseCaseDisappears() {
         assertTrue(CameraControlRules.shutterEnabled(true,false,0,true,true,false))
         assertFalse(CameraControlRules.shutterEnabled(true,false,0,true,false,false))
+        // A double-tap must not send a second stop before CameraX Finalize.
+        assertFalse(CameraControlRules.shutterEnabled(
+            true,false,0,true,true,false,stoppingRecording = true))
     }
 
     @Test fun zoomPresetsRespectHardwareAndUnusualRanges() {
