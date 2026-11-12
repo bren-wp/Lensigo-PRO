@@ -7,7 +7,7 @@ import org.junit.Test
 class SettingsOriginNavigationTest {
     @Test fun settingsReturnsToScreenThatOpenedIt() {
         for (origin in listOf(
-            Screen.WELCOME, Screen.PERMISSIONS, Screen.HOME, Screen.CAMERA,
+            Screen.WELCOME, Screen.HOME, Screen.CAMERA,
             Screen.GALLERY, Screen.VIEWER, Screen.ABOUT, Screen.LICENCES
         )) {
             assertTrue(shouldRememberSettingsOrigin(origin, Screen.SETTINGS))

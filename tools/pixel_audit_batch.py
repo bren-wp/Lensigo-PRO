@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
-"""Deterministic 18-screen mobile/tablet audit; never substitutes concept art for real screenshots."""
+"""Deterministic 17-screen mobile/tablet audit; never substitutes concept art for real screenshots."""
 import argparse
 import json
 from pathlib import Path
 from pixel_audit import inspect
 
 SCREENS = (
-    "01_splash.png", "02_onboarding.png", "03_permissions.png",
+    "01_splash.png", "02_onboarding.png",
     "04_home.png", "05_photo.png", "06_video.png", "07_pro.png",
     "08_night.png", "09_portrait.png", "10_panorama.png", "11_dual.png",
     "12_filters.png", "13_gallery.png", "14_viewer.png", "15_editor.png",

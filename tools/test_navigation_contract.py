@@ -20,8 +20,19 @@ class NavigationContractTest(unittest.TestCase):
         self.assertNotIn("onPrivacy:", info)
         self.assertNotIn("onPrivacy:", settings)
         self.assertNotIn("18_privacy.png", SCREENS)
+        self.assertNotIn("03_permissions.png", SCREENS)
         self.assertIn("Screen.ABOUT", main)
         self.assertIn("Screen.CAMERA_SETTINGS", main)
+
+    def test_no_dedicated_permissions_page_or_dead_route(self):
+        main = (SRC / "MainActivity.kt").read_text(encoding="utf-8")
+        branded = (SRC / "BrandScreens.kt").read_text(encoding="utf-8")
+        self.assertNotIn("Screen.PERMISSIONS", main)
+        self.assertNotIn("LensigoPermissions", branded)
+        self.assertNotIn("PermissionRow(", branded)
+        self.assertIn("requestCameraOnly.launch", main)
+        self.assertIn("requestStorageOnly.launch", main)
+        self.assertIn("screen = Screen.CAMERA", main)
 
     def test_real_privacy_protections_and_about_version_remain(self):
         manifest = (ROOT / "app/src/main/AndroidManifest.xml").read_text()

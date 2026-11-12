@@ -1,3 +1,5 @@
+> **Aktualni opseg:** 17 zaslona na mobitelu i 17 na tabletu. Zasebni ekrani Privatnost i Dopuštenja uklonjeni su. Za foto/video funkcije ostaju obvezne Androidove native dozvole. Stvarna README galerija koristi Android emulator screencap.
+
 # LENSIGO roadmap
 
 ## 0.1.x

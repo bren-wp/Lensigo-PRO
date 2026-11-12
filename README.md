@@ -14,6 +14,10 @@
 
 **LENSIGO** je Android kamera osmišljena za brzo snimanje, intuitivne ručne kontrole i obradu fotografija na samom uređaju. Tamno sučelje s cijan naglascima zadržava fokus na kadru. Aplikacija ne zahtijeva račun, nema reklama i ne koristi internetsku dozvolu.
 
+### 🚀 Od dobrodošlice ravno do fotografiranja
+
+**Uklonjen je zaseban zaslon „Dopuštenja”.** Nakon prvog pozdrava odmah se otvara kamera. Androidov vlastiti sigurnosni dijalog za pristup kameri pojavljuje se samo kada je potreban. Za zvuk videa mikrofon je izboran; na Androidu 7–9 dopuštenje spremanja traži se tek pri snimanju. Nema dodatnog međukoraka niti suvišnih aplikacijskih kartica.
+
 ### ✨ Osam načina snimanja
 
 | Način | Što možeš raditi |
@@ -33,16 +37,15 @@
 
 Galerija, pregled fotografija i videa, favoriti, izrezivanje, rotacija, kontrast, svjetlina i filteri dostupni su bez slanja medija u oblak. Uređena fotografija sprema se kao **nova kopija**, a original ostaje netaknut.
 
-## 📱 Stvarni zasloni aplikacije
+## 📱 Stvarni zasloni aplikacije — originalne Android snimke
 
 Ovdje se objavljuju **isključivo izvorne PNG snimke pokrenute Android aplikacije**. Nikad ne zamjenjujemo screenshot dizajnerskim mockupom. Automatizirani emulator može snimiti zaslone koji ne zahtijevaju fizički senzor; njegovi kadrovi označeni su kao *emulator*, a ne fotografije s telefona.
 
 <!-- BEGIN REAL LENSIGO SCREENSHOTS -->
-**Stvarne snimke pokrenute aplikacije** — Android 15 emulator, 1080 × 2400 px, gustoća 480 dpi; stvarna kamera na fizičkom uređaju nije ovdje verificirana. Snimke nisu dizajnerski mockupovi.
+**Stvarne snimke pokrenute aplikacije (bez uklonjenog zaslona Dopuštenja)** — Android 15 emulator, 1080 × 2400 px, gustoća 480 dpi; stvarna kamera na fizičkom uređaju nije ovdje verificirana. Snimke nisu dizajnerski mockupovi.
 
 <p align="center">
 <img src="docs/screenshots/real/02_onboarding.png" alt="Stvarna Android emulator snimka — Dobrodošlica" width="190">
-<img src="docs/screenshots/real/03_permissions.png" alt="Stvarna Android emulator snimka — Dopuštenja" width="190">
 <img src="docs/screenshots/real/05_photo.png" alt="Stvarna Android emulator snimka — Foto način" width="190">
 <img src="docs/screenshots/real/04_home.png" alt="Stvarna Android emulator snimka — Početna" width="190">
 <img src="docs/screenshots/real/16_settings.png" alt="Stvarna Android emulator snimka — Postavke" width="190">
@@ -52,7 +55,7 @@ Ovdje se objavljuju **isključivo izvorne PNG snimke pokrenute Android aplikacij
 Izvor: `adb exec-out screencap -p`, GitHub Actions run `43122119096`. [Matrica za 1:1 mjerenje](docs/UI-ACCEPTANCE-MATRIX.md).
 <!-- END REAL LENSIGO SCREENSHOTS -->
 
-Pixel-perfect dokaz traži usporedbu **18 aktivnih zaslona za mobitel + 18 za tablet** pri jednakom viewportu, gustoći i skali fonta. Trenutno nema potvrde o 0% odstupanja. [Matrica vizualnih provjera](docs/UI-ACCEPTANCE-MATRIX.md).
+Pixel-perfect dokaz traži usporedbu **17 aktivnih zaslona za mobitel + 17 za tablet** pri jednakom viewportu, gustoći i skali fonta. Trenutno nema potvrde o 0% odstupanja. [Matrica vizualnih provjera](docs/UI-ACCEPTANCE-MATRIX.md).
 
 ## 🎨 Prepoznatljiv LENSIGO identitet
 
@@ -68,7 +71,7 @@ Fotografije i videozapisi ostaju na uređaju. Android manifest nema mrežne ni l
 
 ## ⬇️ Preuzimanje
 
-**[Sva GitHub izdanja — APK, AAB i kontrolni zbrojevi](https://github.com/bren-wp/Lensigo-PRO/releases)**
+**[Najnovije izdanje — APK, AAB i SHA-256](https://github.com/bren-wp/Lensigo-PRO/releases/latest)**
 
 - `app-debug.apk` — **testni APK** s debug potpisom, za ručnu instalaciju.
 - `app-release.aab` — **nepotpisani** preview bundle; nije spreman za izravnu objavu na Google Playu.
@@ -93,3 +96,5 @@ Kontrole kvalitete obuhvaćaju JVM testove, lint, sigurnosne invarijante, valida
 ---
 
 <p align="center"><strong>LENSIGO · PRO CAMERA</strong><br>© 2026 BRENDIGO · <a href="https://brendigo.com">brendigo.com</a><br><small>Projekt MIT; ovisnosti imaju zasebne licence.</small></p>
+
+<!-- Galerija sadrži samo stvarne PNG snimke pokrenutog APK-a. Automatski se osvježava nakon uspješnog CI builda. -->

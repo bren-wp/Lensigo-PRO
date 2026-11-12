@@ -22,7 +22,6 @@ START = "<!-- BEGIN REAL LENSIGO SCREENSHOTS -->"
 END = "<!-- END REAL LENSIGO SCREENSHOTS -->"
 SCREENS = (
     ("02_onboarding", "Dobrodošlica"),
-    ("03_permissions", "Dopuštenja"),
     ("05_photo", "Foto način"),
     ("04_home", "Početna"),
     ("16_settings", "Postavke"),
@@ -153,24 +152,18 @@ def main() -> int:
     adb("shell", "pm", "clear", APP)
     adb("shell", "am", "start", "-n", APP + "/.MainActivity")
 
-    # Mandatory genuine first-run screens; never make up their content.
+    # Remove screenshots from older APKs; never publish stale permission UI.
+    for stale in output.glob("*.png"):
+        stale.unlink()
+    # The emulator grants the native CAMERA runtime permission before the
+    # Welcome action; there is no custom permissions page in the current app.
+    adb("shell", "pm", "grant", APP, "android.permission.CAMERA")
     capture(output / "02_onboarding.png", "Započni")
     tap("Započni")
-    capture(output / "03_permissions.png", "Spremno za snimanje?")
-
-    # The system permission prompt is real; choose the real Android control.
+    if find_label(ui_tree(), "Spremno za snimanje?") is not None:
+        raise RuntimeError("Removed permissions page is still present")
+    capture(output / "05_photo.png", "FOTO")
     try:
-        tap("Dopusti pristup kameri")
-        for label in ("While using the app", "Dok koristite aplikaciju",
-                      "Allow only while using the app", "Only this time"):
-            try:
-                tap(label, timeout_seconds=4)
-                break
-            except RuntimeError:
-                pass
-        tap("Nastavi na kameru", timeout_seconds=16)
-        time.sleep(4)
-        capture(output / "05_photo.png", "FOTO")
         adb("shell", "input", "keyevent", "4")
         capture(output / "04_home.png", "Načini snimanja")
         tap("Postavke")
@@ -180,8 +173,8 @@ def main() -> int:
         capture(output / "13_gallery.png", "Galerija")
     except (RuntimeError, subprocess.SubprocessError, ValueError) as exc:
         print("Optional Android screenshot sequence stopped:", exc, file=sys.stderr)
-        # Only confirmed captures are used in README; partial real sets are OK.
-
+        # Only verified real screenshots are published.
+    
     publish_gallery(root, output, os.environ.get("SOURCE_RUN_ID", "unknown"))
     print("README updated with verified emulator screenshots only.")
     return 0

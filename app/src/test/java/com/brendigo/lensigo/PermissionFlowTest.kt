@@ -4,27 +4,19 @@ import org.junit.Assert.assertEquals
 import org.junit.Test
 
 class PermissionFlowTest {
-    @Test fun cameraIsAlwaysRequiredBeforeEnteringCapture() {
-        assertEquals(PermissionNextStep.CAMERA,
-            nextPermissionStep(cameraGranted = false,
-                storageGranted = true, storageRequired = false))
-        assertEquals(PermissionNextStep.CAMERA,
-            nextPermissionStep(cameraGranted = false,
-                storageGranted = false, storageRequired = true))
+    @Test fun cameraIsAlwaysTheFirstRequiredPermission() {
+        assertEquals(CapturePermission.CAMERA,
+            CapturePermissionPolicy.nextMissing(false, true, false))
+        assertEquals(CapturePermission.CAMERA,
+            CapturePermissionPolicy.nextMissing(false, false, true))
     }
 
-    @Test fun legacyStoragePermissionIsRequiredOnAndroidSevenToNine() {
-        assertEquals(PermissionNextStep.STORAGE,
-            nextPermissionStep(cameraGranted = true,
-                storageGranted = false, storageRequired = true))
-    }
-
-    @Test fun noExtraStoragePermissionOnScopedStorageDevices() {
-        assertEquals(PermissionNextStep.CONTINUE,
-            nextPermissionStep(cameraGranted = true,
-                storageGranted = false, storageRequired = false))
-        assertEquals(PermissionNextStep.CONTINUE,
-            nextPermissionStep(cameraGranted = true,
-                storageGranted = true, storageRequired = true))
+    @Test fun legacyStorageOnlyWhenCapturingOnAndroidSevenToNine() {
+        assertEquals(CapturePermission.STORAGE,
+            CapturePermissionPolicy.nextMissing(true, false, true))
+        assertEquals(CapturePermission.NONE,
+            CapturePermissionPolicy.nextMissing(true, false, false))
+        assertEquals(CapturePermission.NONE,
+            CapturePermissionPolicy.nextMissing(true, true, true))
     }
 }

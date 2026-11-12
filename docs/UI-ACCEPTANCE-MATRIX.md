@@ -1,10 +1,11 @@
-# LENSIGO — acceptance matrix for 36 active screens
+# LENSIGO — acceptance matrix for 34 active screens
 
 This pipeline **never claims 1:1 without an emulator or a physical device**.
-There are 19 original source references per device. The dedicated Privacy
-screen (18_privacy) was removed on user request, so the current app has
-**18 active layouts per device**: 36 actual captures for 36 matching references.
-Original Privacy PNGs remain archival references, not required screenshots.
+There are 19 original source references per device. The dedicated Privacy screen (18_privacy) and the standalone Permissions
+screen (03_permissions) were removed on user request. The current app has
+**17 active layouts per device**: 34 actual captures for 34 matching references.
+Original Privacy and Permissions PNGs are archival design references, not
+required screenshots or active application routes.
 
 ## Collect screenshots (local Android SDK + device required)
 
@@ -31,7 +32,7 @@ python tools/ui_acceptance_matrix.py \
 ```
 
 Outputs: `audit/acceptance.json`, `audit/largest_deviations.csv`, both
-device summaries, and 36 full-resolution pixel-diff PNG files.
+device summaries, and 34 full-resolution pixel-diff PNG files.
 
 If screenshots are missing, mismatched in size, or otherwise unreadable,
 the audit **fails**. Largest-deviation rankings are calculated only for
@@ -46,7 +47,7 @@ unfavorable controls with broad masks.
 - 60 FPS and video stabilization indicate target/availability; actual codec
   behavior is validated from recorded file metadata on physical devices.
 - Portrait person mask and panorama perspective match tested on diverse scenes.
-- Gallery/Viewer/Editor/Settings/About require testing at API 24–36; the separate Privacy screen was removed at user request.
+- Gallery/Viewer/Editor/Settings/About require testing at API 24–36; the separate Privacy and Permissions screens were removed at user request.
 - AAB signed with production upload key; current preview AAB is **unsigned**.
 - Full pixel-perfect 1:1 can be claimed only for the exactly matched
   screen/viewport pairs whose full-frame diff supports it.
@@ -85,3 +86,7 @@ koristi `[skip ci]`, bez novog bespotrebnog binary builda.
 
 To nije 1:1 verifikacija, zamjena za referentne slike ni dokaz kvalitete
 fizičke kamere. U README ne unositi slike koje nisu snimljene iz pokrenute aplikacije.
+
+## Uklanjanje zasebnog ekrana Dopuštenja
+
+Izvorna `03_permissions.png` i ranije uklonjena `18_privacy.png` sada su arhivske reference. Aktivna aplikacija sadrži 17 zaslona po ciljnom profilu. Welcome vodi izravno na Camera, a Android sam prikazuje obvezne sistemske dijaloge za dozvole kada su potrebne. Kamera se traži pri prvom otvaranju, pohrana na Androidu 7–9 tek pri spremanju, mikrofon je neobvezan. Automatizirano snimanje uklanja prethodne PNG-ove i ne može objaviti sliku uklonjenog ekrana kao aktualni screenshot.

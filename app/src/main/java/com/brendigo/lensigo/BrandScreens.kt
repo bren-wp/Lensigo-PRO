@@ -1,7 +1,6 @@
 package com.brendigo.lensigo
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.clickable
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
@@ -11,10 +10,6 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.ArrowBack
-import androidx.compose.material.icons.filled.CameraAlt
-import androidx.compose.material.icons.filled.Mic
-import androidx.compose.material.icons.filled.Folder
-import androidx.compose.material.icons.filled.Shield
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
 import androidx.compose.runtime.Composable
@@ -25,29 +20,15 @@ import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.platform.LocalDensity
-import androidx.compose.ui.semantics.Role
-import androidx.compose.ui.semantics.semantics
-import androidx.compose.ui.semantics.stateDescription
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 
 private val Night = Color(0xFF0D2133)
-private val Deep = Color(0xFF07131F)
 private val Accent = Color(0xFF00CFF7)
 private val Muted = Color(0xFF9CB3C4)
 private val White = Color(0xFFF8FBFF)
-
-internal enum class PermissionNextStep { CAMERA, STORAGE, CONTINUE }
-
-internal fun nextPermissionStep(
-    cameraGranted: Boolean, storageGranted: Boolean, storageRequired: Boolean
-): PermissionNextStep = when {
-    !cameraGranted -> PermissionNextStep.CAMERA
-    storageRequired && !storageGranted -> PermissionNextStep.STORAGE
-    else -> PermissionNextStep.CONTINUE
-}
 
 @Composable
 fun LensigoSplash() {
@@ -223,122 +204,6 @@ fun LensigoWelcome(onBack: () -> Unit, onSettings: () -> Unit, onContinue: () ->
                 colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0984AD))) {
                 Text("Započni", fontWeight = FontWeight.Bold, color = White)
             }
-        }
-    }
-}
-
-@Composable
-fun LensigoPermissions(
-    cameraGranted: Boolean,
-    storageGranted: Boolean,
-    storageRequired: Boolean,
-    micGranted: Boolean,
-    onCamera: () -> Unit,
-    onStorage: () -> Unit,
-    onMic: () -> Unit,
-    onBack: () -> Unit,
-    onSettings: () -> Unit,
-    onContinue: () -> Unit
-) {
-    BoxWithConstraints(Modifier.fillMaxSize().background(Brush.verticalGradient(
-        listOf(Night, Color(0xFF0A1B2C), Color(0xFF08111E))
-    ))) {
-        val compact = maxHeight < 710.dp || maxWidth < 350.dp ||
-            LocalDensity.current.fontScale >= 1.35f
-        Column(
-            Modifier.fillMaxSize()
-                .then(if (compact) Modifier.verticalScroll(rememberScrollState()) else Modifier)
-                .padding(18.dp),
-            verticalArrangement = Arrangement.spacedBy(12.dp)
-        ) {
-            OnboardingHeader("Dopuštenja", onBack, onSettings)
-            Spacer(Modifier.height(2.dp))
-            Text("Spremno za snimanje?", fontSize = 27.sp,
-                fontWeight = FontWeight.Bold, color = White)
-            Text("Odaberi potrebna dopuštenja.", fontSize = 14.sp, color = Muted)
-            Spacer(Modifier.height(12.dp))
-            PermissionRow("Kamera", "Fotografiranje i prikaz uživo", cameraGranted, onCamera,
-                icon = { Icon(Icons.Default.CameraAlt, null, tint = Accent) })
-            PermissionRow("Mikrofon", "Zvuk za videozapise (neobvezno)",
-                micGranted, onMic, icon = { Icon(Icons.Default.Mic, null, tint = Accent) })
-            PermissionRow("Medijske datoteke",
-                if (storageRequired) "Spremanje vlastitih snimki na Androidu 7–9"
-                else "Spremanje vlastitih snimki bez dodatne dozvole",
-                storageGranted, onStorage, notRequired = !storageRequired,
-                icon = { Icon(Icons.Default.Folder, null, tint = Accent) })
-            Row(
-                Modifier.fillMaxWidth().heightIn(min = 72.dp)
-                    .background(Color(0xFF102E45), RoundedCornerShape(12.dp))
-                    .border(1.dp, Color(0xFF25516B), RoundedCornerShape(12.dp))
-                    .padding(12.dp),
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Icon(Icons.Default.Shield, contentDescription = null, tint = Accent)
-                Spacer(Modifier.width(12.dp))
-                Column {
-                    Text("Lokacija (neobvezno)", color = White, fontWeight = FontWeight.Bold)
-                    Text("Ne prikuplja se niti dodaje fotografijama.",
-                        color = Muted, fontSize = 11.sp)
-                }
-            }
-            Spacer(if (compact) Modifier.height(8.dp) else Modifier.weight(1f))
-            val nextStep = nextPermissionStep(
-                cameraGranted, storageGranted, storageRequired
-            )
-            Button(onClick = {
-                when (nextStep) {
-                    PermissionNextStep.CAMERA -> onCamera()
-                    PermissionNextStep.STORAGE -> onStorage()
-                    PermissionNextStep.CONTINUE -> onContinue()
-                }
-            },
-                modifier = Modifier.fillMaxWidth().heightIn(min = 56.dp),
-                shape = RoundedCornerShape(12.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = Color(0xFF0984AD))) {
-                Text(when (nextStep) {
-                    PermissionNextStep.CAMERA -> "Dopusti pristup kameri"
-                    PermissionNextStep.STORAGE -> "Dopusti spremanje fotografija"
-                    PermissionNextStep.CONTINUE -> "Nastavi na kameru"
-                }, fontWeight = FontWeight.Bold)
-            }
-        }
-    }
-}
-
-@Composable
-private fun PermissionRow(
-    title: String, detail: String, granted: Boolean,
-    onClick: () -> Unit, notRequired: Boolean = false,
-    icon: @Composable () -> Unit
-) {
-    // The original reference uses a full-width permission card, not a text
-    // action inside every row. The entire card is the touch target, with an
-    // accessible grant state and genuine Android permission request.
-    Row(
-        Modifier.fillMaxWidth().heightIn(min = 72.dp)
-            .background(Color(0xFF102E45), RoundedCornerShape(12.dp))
-            .border(1.dp, Color(0xFF25516B), RoundedCornerShape(12.dp))
-            .clickable(
-                enabled = !granted && !notRequired,
-                role = Role.Button,
-                onClickLabel = "Dopusti pristup: $title",
-                onClick = onClick
-            )
-            .semantics {
-                stateDescription = when {
-                    notRequired -> "Dodatno dopuštenje nije potrebno"
-                    granted -> "Dopušteno"
-                    else -> "Nije dopušteno"
-                }
-            }
-            .padding(12.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        icon()
-        Spacer(Modifier.width(12.dp))
-        Column(Modifier.weight(1f)) {
-            Text(title, color = White, fontWeight = FontWeight.Bold)
-            Text(detail, color = Muted, fontSize = 11.sp)
         }
     }
 }

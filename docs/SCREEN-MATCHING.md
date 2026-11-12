@@ -3,13 +3,13 @@
 Izvor: korisnikov paket `LENSIGO_Branding_Android_UI_19_ekrana(1).zip`.
 
 **Referentni mobilni format:** 1080 × 2400 px. **Tablet:** 1600 × 2560 px.
-Rekonstrukcija se izrađuje u Jetpack Compose; screenshotovi koncepta nisu stvarne snimke Android aplikacije. Za potvrdu *pixel-perfect* potrebni su screenshot testovi na ciljanim rezolucijama i usporedba boja i rubova. Još nema potvrđene 1:1 podudarnosti.
+Rekonstrukcija se izrađuje u Jetpack Compose; screenshotovi koncepta nisu stvarne snimke Android aplikacije. Za potvrdu *pixel-perfect* potrebni su screenshot testovi na ciljanim rezolucijama i usporedba boja i rubova. Još nema potvrđene 1:1 podudarnosti. **Aktualno je 17 aktivnih zaslona po profilu uređaja.** Namjenski zasloni `03_permissions` i `18_privacy` uklonjeni su na zahtjev vlasnika; njihovi dizajni su samo arhiva.
 
 | Referenca | Zaslon | Implementacija | Status |
 |---|---|---|---|
 | 01_splash.png | Splash | Brendirani Compose Splash i simbol LENSIGO | Funkcionalno, nije vizualno 1:1 potvrđeno |
 | 02_onboarding.png | Dobrodošlica | Brendirani prikaz i gumb Započni | Funkcionalno, nije 1:1 potvrđeno |
-| 03_permissions.png | Dozvole | Runtime kamera/pohrana/mikrofon | Funkcionalno, nije vizualno 1:1 |
+| 03_permissions.png | Dozvole | **Uklonjeno**; samo izvorni Android sistemski dijalozi | Arhivski koncept, ne ulazi u 1:1 audit |
 | 04_home.png | Početni izbornik | Responzivne kartice: 8 CameraX načina rada, galerija, postavke, o aplikaciji | Implementirano; 1:1 nije mjereno |
 | 05_photo.png | Foto | Preview, 4:3/16:9, bljeskalica, fokus, zoom, okidač | Funkcionalno, 1:1 nije potvrđeno |
 | 06_video.png | Video | HD/SD, opcionalni zvuk, recording | Funkcionalno, 1:1 nije potvrđeno |
@@ -24,7 +24,7 @@ Rekonstrukcija se izrađuje u Jetpack Compose; screenshotovi koncepta nisu stvar
 | 15_editor.png | Uređivač | Zajednička preview/export obrada crop/rotate/filter, 12 efekata, max 840 px u pretpregledu | Funkcionalno unutar implementiranog opsega, 1:1 nije potvrđeno |
 | 16_settings.png | Postavke | JPEG, lokalna obrada, SD video, mreža, timer i opcionalni zvuk | Implementirano, 1:1 nije potvrđeno |
 | 17_camera-settings.png | Kamera postavke | Zaseban ekran JPEG, mreža i video kvaliteta | Implementirano djelomično, 1:1 nije potvrđeno |
-| 18_privacy.png | Privatnost | Brendirana četiri retka, simbol, informativni panel i otvaranje Android dozvola | Implementirano; 1:1 nije potvrđeno |
+| 18_privacy.png | Privatnost | **Uklonjeno** na zahtjev vlasnika | Arhivski koncept, ne ulazi u 1:1 audit |
 | 19_about.png | O aplikaciji | Simbol i wordmark, naziv, web-stranica, licence, privatnost i stvarna verzija | Implementirano; 1:1 nije potvrđeno |
 
 ## Redoslijed dorade
@@ -359,3 +359,7 @@ Izvor: korisnikov `13_gallery.png` … `19_about.png`, mobilna referenca 1080×2
 - S uključenom 17 Camera Settings izvorno usklađenom hijerarhijom 5+4 retka ova korekcija omogućuje bolju vidljivost svih devet stavki bez preklapanja. Dodatni JPEG/postprocessing alati ostaju u prikazu naprednih postavki zupčanika.
 - Uklonjen je neiskorišteni `active` lokalni izraz u `SettingsItem` (mali dead-code cleanup); klik/prekidač i TalkBack ostaju ista jedna semantička akcija.
 - Bez Android screencap provjere nije moguće potvrditi točnu pikselnu podudarnost izvornih PNG-ova.
+
+## Aktualna navigacija i dozvole
+
+Na prvom pokretanju: Splash → Welcome → Kamera. Na kasnijim pokretanjima: Splash → Kamera. Nema dodatnog zaslona Dopuštenja. Kamera se odobrava u Androidovu izvornom dijalogu, a dodatna prava traže se samo kada korisnik pokrene značajku koja ih zahtijeva. Dijelovi iznad koji citiraju starija izdanja povijesni su, ne opis aktualne verzije.

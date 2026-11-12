@@ -21,14 +21,14 @@ class UiAcceptanceTest(unittest.TestCase):
                     Image.new("RGB",(48,96),(12,34,50)).save(actual/device/screen)
             Image.new("RGB",(48,96),(200,100,0)).save(actual/"mobitel/16_settings.png")
             result=analyze(refs,actual,root/"audit")
-            self.assertEqual(result["compared"],36)
-            self.assertFalse(result["all_36_pixel_identical"])
+            self.assertEqual(result["compared"],34)
+            self.assertFalse(result["all_34_pixel_identical"])
             self.assertEqual(result["largest_deviations"][0]["screen"],"16_settings")
             self.assertTrue((root/"audit/largest_deviations.csv").exists())
             self.assertTrue((root/"audit/acceptance.json").exists())
             (actual/"tablet/19_about.png").unlink()
             result2=analyze(refs,actual,root/"audit2")
-            self.assertEqual(result2["compared"],35)
+            self.assertEqual(result2["compared"],33)
             self.assertIn("19_about.png",result2["devices"]["tablet"]["missing"])
 
 

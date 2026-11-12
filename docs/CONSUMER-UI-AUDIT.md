@@ -1,3 +1,5 @@
+> **Aktualizacija, studeni 2026.:** od 19 izvornih konceptnih zaslona uklonjeni su 03 Permissions i 18 Privacy. Trenutačno je aktivno 17 prikaza po tipu uređaja. Dizajnerski koncepti nisu stvarni screenshotovi. Kamera i mikrofon i dalje koriste Androidove sistemske dozvole kada je potrebno.
+
 # LENSIGO — Consumer UI quality and pixel-contract audit
 
 Reference source is the user-supplied 19-screen mobile/tablet Android UI package, including `prototip/index.html` and all native PNG reference images.

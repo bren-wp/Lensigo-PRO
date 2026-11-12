@@ -9,7 +9,7 @@ The feature is **not considered device-tested** just because it compiles.
 | Android 10 / API 29 | MediaStore owner paths, deleting owned media, app preferences | Not run |
 | Android 12 / API 31 | camera live effects, Night/Bokeh extensions only when supported | Not run |
 | Android 13–16 / API 33–36 | scoped media, edge-to-edge bars, system permission roundtrip | Not run |
-| 1080 × 2400 pixel phone | compare 18 active screens to `izvoz/mobitel`; original 18_privacy archived | No screenshots yet |
+| 1080 × 2400 pixel phone | compare 17 active screens to `izvoz/mobitel`; original 03_permissions and 18_privacy archived | No screenshots yet |
 | 1600 × 2560 pixel tablet | compare 18 active screens to `izvoz/tablet`; original 18_privacy archived | No screenshots yet |
 | Landscape and large text | scrollability, no truncated buttons, 1.3×/2× font scaling | Not run |
 
@@ -43,8 +43,8 @@ A screenshot score is valid only for the specific device settings used to captur
 
 ## Dodatne provjere nakon izmjena 02/03
 
-- Na Android emulatoru provjeriti Welcome i Permissions na 320 dp širine i u vodoravnom položaju; testirati uz 1.3× i 2× povećanje fonta.
-- Na kompaktnom rasporedu potvrditi da su Započni i Nastavi dostupni okomitim pomicanjem bez preklapanja kartica/dozvola.
+- Na Android emulatoru provjeriti Welcome i izravan ulaz u kameru na 320 dp širine i u vodoravnom položaju; testirati uz 1.3× i 2× povećanje fonta.
+- Na kompaktnom rasporedu potvrditi da su Započni dostupni okomitim pomicanjem bez preklapanja kartica/dozvola.
 - Na Androidu 7–9 potvrditi da Kamera i Spremanje pokreću **odvojene** sistemske dijaloge; na Androidu 10+ Spremanje ne smije tražiti zastarjelu dozvolu.
 - Stvarna Android UI/emulator i pixel-diff testiranja još nisu izvršena.
 
@@ -65,6 +65,10 @@ A screenshot score is valid only for the specific device settings used to captur
 ## Navigacija nakon uklanjanja zaslona Privatnost
 
 - Iz svih Compose ruta i Android back obrade uklonjen je `Screen.PRIVACY`, zaseban zaslon i povratno stanje; zaštite lokacije, EXIF-a i sustavnih dozvola ostaju u odgovarajućim stvarnim funkcijama.
-- Otkriven i uklonjen rubni navigacijski problem: zupčanik na `O aplikaciji` i `Licence` otvarao je Postavke, ali je Back pogrešno vodio prema prethodnoj kameri. Novi `shouldRememberSettingsOrigin` osigurava da povratak iz Postavki ide na točan izvor (uključujući Welcome, Permissions, About i Licences), dok povratak iz dubokog `Camera Settings` ne prepisuje izvor. JVM testovi štite ovu logiku.
+- Otkriven i uklonjen rubni navigacijski problem: zupčanik na `O aplikaciji` i `Licence` otvarao je Postavke, ali je Back pogrešno vodio prema prethodnoj kameri. Novi `shouldRememberSettingsOrigin` osigurava da povratak iz Postavki ide na točan izvor (uključujući Welcome, About i Licences), dok povratak iz dubokog `Camera Settings` ne prepisuje izvor. JVM testovi štite ovu logiku.
 - U Home ekranu vizualni gumb galerije i dalje ima izvornih 40dp na mobitelu, ali prozirno interaktivno područje sada ima 48dp, a Brendigo simbol minimalno 48dp.
 - Ikone testirati na OEM launcherima: Pixel (okrugla maska), Samsung (squircle), Xiaomi, te Android 7 stari PNG; nakon ažuriranja pojedini launcheri trebaju osvježavanje cachea ikona. Sama verzija koda ne dokazuje 1:1 maskiranje bez stvarne snimke početnog zaslona uređaja.
+
+## Aktualni tok pristupa kameri (nakon uklanjanja zaslona 03)
+
+Nema zasebnog aplikacijskog zaslona Dopuštenja. Tok je Splash → Welcome → Kamera ili Splash → Kamera za postojeće korisnike. Androidov izvorni runtime dijalog ostaje neophodan za korištenje senzora, ali su dozvole pohrane na API 24–28 i mikrofona kontekstualne. Pri odbijenoj kameri na kamerinom zaslonu ostaje jednostavan gumb za ponovno traženje dopuštenja. Potrebni su testovi odbijanja, trajnog odbijanja i povratka iz Androidovih postavki.

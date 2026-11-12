@@ -9,7 +9,7 @@ fi
 command -v adb >/dev/null || { echo "Android platform-tools (adb) required"; exit 2; }
 device="$1"; root="$2/$device"
 mkdir -p "$root"
-screens=(01_splash 02_onboarding 03_permissions 04_home 05_photo 06_video
+screens=(01_splash 02_onboarding 04_home 05_photo 06_video
   07_pro 08_night 09_portrait 10_panorama 11_dual 12_filters
   13_gallery 14_viewer 15_editor 16_settings 17_camera-settings
   19_about)
@@ -21,4 +21,4 @@ for screen in "${screens[@]}"; do
   test -s "$root/$screen.png"
   echo "Saved $root/$screen.png"
 done
-echo "All 18 active-screen captures saved in $root"
+echo "All 17 active-screen captures saved in $root"

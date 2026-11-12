@@ -99,7 +99,7 @@ private val Blue = Color(0xFF2E83FF)
 private val Muted = Color(0xFF9DB5C4)
 private val White = Color(0xFFF7FCFF)
 
-internal enum class Screen { SPLASH, WELCOME, PERMISSIONS, HOME, CAMERA, GALLERY, VIEWER, SETTINGS, CAMERA_SETTINGS, ABOUT, LICENCES }
+internal enum class Screen { SPLASH, WELCOME, HOME, CAMERA, GALLERY, VIEWER, SETTINGS, CAMERA_SETTINGS, ABOUT, LICENCES }
 
 internal fun shouldRememberSettingsOrigin(current: Screen, next: Screen): Boolean =
     next == Screen.SETTINGS && current != Screen.SETTINGS &&
@@ -265,11 +265,6 @@ private fun LensigoApplication() {
         lifecycle.lifecycle.addObserver(observer)
         onDispose { lifecycle.lifecycle.removeObserver(observer) }
     }
-    val requestCamera = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) {
-        hasCameraPermission = ContextCompat.checkSelfPermission(context, Manifest.permission.CAMERA) == PackageManager.PERMISSION_GRANTED
-        hasStoragePermission = Build.VERSION.SDK_INT >= 29 ||
-            ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) == PackageManager.PERMISSION_GRANTED
-    }
     val requestCameraOnly = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         hasCameraPermission = it
     }
@@ -279,10 +274,16 @@ private fun LensigoApplication() {
     val requestMic = rememberLauncherForActivityResult(ActivityResultContracts.RequestPermission()) {
         hasMicPermission = it
     }
-    fun requestPermissions() {
-        requestCamera.launch(if (Build.VERSION.SDK_INT < 29)
-            arrayOf(Manifest.permission.CAMERA, Manifest.permission.WRITE_EXTERNAL_STORAGE)
-            else arrayOf(Manifest.permission.CAMERA))
+    fun requestCaptureAccess() {
+        when (CapturePermissionPolicy.nextMissing(
+            hasCameraPermission, hasStoragePermission, Build.VERSION.SDK_INT < 29
+        )) {
+            CapturePermission.CAMERA ->
+                requestCameraOnly.launch(Manifest.permission.CAMERA)
+            CapturePermission.STORAGE ->
+                requestStorageOnly.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
+            CapturePermission.NONE -> Unit
+        }
     }
     fun openAppSystemSettings() {
         runCatching {
@@ -657,7 +658,7 @@ private fun LensigoApplication() {
     }
     fun finishPanorama() {
         if (processing || panoramaParts.size < PanoramaComposer.MIN_FRAMES) return
-        if (!hasStoragePermission) { requestPermissions(); return }
+        if (!hasStoragePermission) { requestCaptureAccess(); return }
         processing = true
         val frames = panoramaParts.toList()
         panoramaParts.clear()
@@ -674,7 +675,7 @@ private fun LensigoApplication() {
     }
     fun capturePanorama() {
         if (processing || panoramaParts.size >= PanoramaComposer.MAX_FRAMES) return
-        if (!hasStoragePermission) { requestPermissions(); return }
+        if (!hasStoragePermission) { requestCaptureAccess(); return }
         val capture = photoCapture ?: return
         processing = true
         val file = createCaptureTempFile("lensigo_panorama_") ?: return
@@ -703,7 +704,7 @@ private fun LensigoApplication() {
     }
     fun captureDual() {
         if (processing || !hasCameraPermission) return
-        if (!hasStoragePermission) { requestPermissions(); return }
+        if (!hasStoragePermission) { requestCaptureAccess(); return }
         val capture = photoCapture ?: return
         processing = true
         val file = createCaptureTempFile("lensigo_dual_") ?: return
@@ -789,7 +790,7 @@ private fun LensigoApplication() {
     }
     fun capturePhoto() {
         if (processing) return
-        if (!hasStoragePermission) { requestPermissions(); return }
+        if (!hasStoragePermission) { requestCaptureAccess(); return }
         val capture = photoCapture ?: return
         processing = true
         val jpeg = createCaptureTempFile("lensigo_capture_") ?: return
@@ -881,7 +882,7 @@ private fun LensigoApplication() {
             return
         }
         if (stoppingRecording) return
-        if (!hasStoragePermission) { requestPermissions(); return }
+        if (!hasStoragePermission) { requestCaptureAccess(); return }
         val capture = videoCapture ?: return
         val values = ContentValues().apply {
             put(MediaStore.MediaColumns.DISPLAY_NAME, "LENSIGO_" + System.currentTimeMillis() + ".mp4")
@@ -1003,7 +1004,7 @@ private fun LensigoApplication() {
         screen = next
     }
     BackHandler(enabled = screen !in setOf(
-        Screen.SPLASH, Screen.WELCOME, Screen.PERMISSIONS
+        Screen.SPLASH, Screen.WELCOME
     ) && !isRecording && !processing) {
         when (screen) {
             Screen.CAMERA -> moveTo(Screen.HOME)
@@ -1028,28 +1029,12 @@ private fun LensigoApplication() {
                 Screen.WELCOME -> LensigoWelcome(
                     onBack = { (context as? Activity)?.finish() },
                     onSettings = { moveTo(Screen.SETTINGS) },
-                    onContinue = { screen = Screen.PERMISSIONS }
-                )
-                Screen.PERMISSIONS -> LensigoPermissions(
-                    cameraGranted = hasCameraPermission,
-                    storageGranted = hasStoragePermission,
-                    storageRequired = Build.VERSION.SDK_INT < 29,
-                    micGranted = hasMicPermission,
-                    onCamera = { requestCameraOnly.launch(Manifest.permission.CAMERA) },
-                    onStorage = {
-                        if (Build.VERSION.SDK_INT < 29) {
-                            requestStorageOnly.launch(Manifest.permission.WRITE_EXTERNAL_STORAGE)
-                        }
-                    },
-                    onMic = { requestMic.launch(Manifest.permission.RECORD_AUDIO) },
-                    onBack = { screen = Screen.WELCOME },
-                    onSettings = { moveTo(Screen.SETTINGS) },
                     onContinue = {
-                        // Match the onboarding reference action: open the real
-                        // camera immediately. HOME remains available from the
-                        // LENSIGO camera header and via system Back.
+                        // Enter the real camera directly; Android owns its permission prompt.
                         prefs.edit().putBoolean("onboarded", true).apply()
                         screen = Screen.CAMERA
+                        if (!hasCameraPermission)
+                            requestCameraOnly.launch(Manifest.permission.CAMERA)
                     }
                 )
                 Screen.CAMERA -> Column(Modifier.fillMaxSize()) {
@@ -1172,7 +1157,9 @@ private fun LensigoApplication() {
                                 horizontalAlignment = Alignment.CenterHorizontally) {
                                 Text("Dopusti pristup kameri", color = White, fontSize = 18.sp)
                                 Spacer(Modifier.height(12.dp))
-                                Button(onClick = ::requestPermissions) { Text("Dopusti") }
+                                Button(onClick = { requestCameraOnly.launch(Manifest.permission.CAMERA) }) {
+                                    Text("Dopusti")
+                                }
                             }
                         }
                         Row(Modifier.align(Alignment.TopStart).padding(14.dp), verticalAlignment = Alignment.CenterVertically) {
