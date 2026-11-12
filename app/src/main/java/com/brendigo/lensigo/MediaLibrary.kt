@@ -94,7 +94,10 @@ object MediaLibrary {
                 retriever.getScaledFrameAtTime(
                     0, MediaMetadataRetriever.OPTION_CLOSEST_SYNC,
                     size.coerceIn(96, 512), size.coerceIn(96, 512))
-            } catch (_: Exception) { null } finally { retriever.release() }
+            } catch (_: Exception) { null } finally {
+                // Some OEM codecs throw while closing a corrupt or partial MP4.
+                runCatching { retriever.release() }
+            }
         }
         return try {
             val resolver = context.contentResolver

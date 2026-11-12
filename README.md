@@ -57,6 +57,10 @@ Izvor: `adb exec-out screencap -p`, GitHub Actions run `43125568367`. [Matrica z
 
 Pixel-perfect dokaz traži usporedbu **17 aktivnih zaslona za mobitel + 17 za tablet** pri jednakom viewportu, gustoći i skali fonta. Trenutno nema potvrde o 0% odstupanja. [Matrica vizualnih provjera](docs/UI-ACCEPTANCE-MATRIX.md).
 
+### Više stvarnih prikaza, bez konceptnih slika
+
+Automatizirano snimanje sada pokušava zabilježiti dodatne funkcionalne načine rada — Video, Pro, Noć, Portret, Panorama, Dual i Filteri — te prikaz O aplikaciji i Postavke kamere. Samo uspješno provjerene snimke pokrenutog APK-a ulaze u gornju galeriju. Hardverski nedostupni prikazi ne predstavljaju se kao testirani.
+
 ## 🎨 Prepoznatljiv LENSIGO identitet
 
 <p align="center"><img src="branding/lensigo-icon.svg" width="125" alt="LENSIGO znak kamere"></p>

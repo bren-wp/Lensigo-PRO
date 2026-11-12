@@ -90,3 +90,9 @@ fizičke kamere. U README ne unositi slike koje nisu snimljene iz pokrenute apli
 ## Uklanjanje zasebnog ekrana Dopuštenja
 
 Izvorna `03_permissions.png` i ranije uklonjena `18_privacy.png` sada su arhivske reference. Aktivna aplikacija sadrži 17 zaslona po ciljnom profilu. Welcome vodi izravno na Camera, a Android sam prikazuje obvezne sistemske dijaloge za dozvole kada su potrebne. Kamera se traži pri prvom otvaranju, pohrana na Androidu 7–9 tek pri spremanju, mikrofon je neobvezan. Automatizirano snimanje uklanja prethodne PNG-ove i ne može objaviti sliku uklonjenog ekrana kao aktualni screenshot.
+
+## Galerija i editor — sigurnije oslobađanje memorije
+
+Kada se korisnik brzo vrati iz galerije, promijeni filter ili zatvori uređivač, izlaz iz asinkronog `withContext` može biti otkazan nakon što je worker dovršio bitmap. Uvedeno je eksplicitno vlasništvo nad još neobjavljenom bitmapom, uz `finally` koji oslobađa rezultate koje Compose nije uspio preuzeti. Objavljene bitmapove i dalje oslobađa postojeći `DisposableEffect`. Nepodržani ili pokvareni MP4 više ne smije uzrokovati rušenje pri iznimci proizvođačkog `MediaMetadataRetriever.release()`. Bez profiliranja na uređajima nije dokazano da su svi memorijski problemi otklonjeni.
+
+Screenshot pipeline sada pokušava snimiti dodatne stvarne CameraX načine rada. Snimka ulazi u README samo ako aplikacija stvarno prikazuje očekivani zaslon i aktivna oznaka načina nalazi se u sredini; neuspjeli senzorski načini preskaču se i nisu zamijenjeni konceptima.

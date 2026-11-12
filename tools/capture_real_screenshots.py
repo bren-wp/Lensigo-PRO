@@ -25,7 +25,16 @@ SCREENS = (
     ("05_photo", "Foto način"),
     ("04_home", "Početna"),
     ("16_settings", "Postavke"),
+    ("17_camera-settings", "Postavke kamere"),
     ("13_gallery", "Galerija"),
+    ("19_about", "O aplikaciji"),
+    ("06_video", "Video način"),
+    ("07_pro", "Pro način"),
+    ("08_night", "Noćni način"),
+    ("09_portrait", "Portret"),
+    ("10_panorama", "Panorama"),
+    ("11_dual", "Dual kamera"),
+    ("12_filters", "Filteri"),
 )
 
 
@@ -76,6 +85,50 @@ def tap(label: str, timeout_seconds: int = 25) -> None:
     adb("shell", "input", "tap", str((left + right) // 2),
         str((top + bottom) // 2))
     time.sleep(1.2)
+
+
+def tap_home_tile(label: str, attempts: int = 6) -> None:
+    """Use the visible real Compose tile, scrolling the home grid if needed."""
+    for index in range(attempts):
+        root = ui_tree()
+        if find_label(root, "PRO CAMERA · BY BRENDIGO") is None:
+            raise RuntimeError("Home is not the foreground application screen")
+        node = find_label(root, label)
+        if node is not None:
+            # A home tile may merge its title and accessibility action.
+            tap(label)
+            return
+        if index + 1 < attempts:
+            adb("shell", "input", "swipe", "550", "1800", "550", "730", "280")
+            time.sleep(0.7)
+    raise RuntimeError("Mode tile not visible after scrolling: " + label)
+
+
+def centered_mode_present(root: ET.Element, title: str) -> bool:
+    """Confirm an exact camera strip title appears in the centered area."""
+    candidates = []
+    for node in root.iter("node"):
+        if node.attrib.get("text", "").strip().casefold() != title.casefold():
+            continue
+        found = re.fullmatch(
+            r"\[(\d+),(\d+)\]\[(\d+),(\d+)\]",
+            node.attrib.get("bounds", "")
+        )
+        if found:
+            left, _, right, _ = map(int, found.groups())
+            candidates.append((left + right) / 2)
+    return any(abs(center - SIZE[0] / 2) < 175 for center in candidates)
+
+
+def verify_camera_mode(title: str) -> None:
+    """Verify the selected strip title is centered; no fabricated screenshots."""
+    root = visible(title)
+    if find_label(root, "PRO CAMERA · BY BRENDIGO") is not None:
+        raise RuntimeError("Navigation to real camera did not complete: " + title)
+    # The active camera mode sits near the middle of the strip. Adjacent
+    # strip labels and the fixed header PRO badge are insufficient evidence.
+    if not centered_mode_present(root, title):
+        raise RuntimeError("Mode title not centered on active camera: " + title)
 
 
 def png_dimensions(data: bytes) -> tuple[int, int]:
@@ -168,13 +221,59 @@ def main() -> int:
         capture(output / "04_home.png", "Načini snimanja")
         tap("Postavke")
         capture(output / "16_settings.png", "Postavke")
+        # Advanced camera settings are a distinct real application route.
+        try:
+            tap("Postavke kamere", timeout_seconds=7)
+            capture(output / "17_camera-settings.png", "Postavke kamere")
+            adb("shell", "input", "keyevent", "4")
+        except RuntimeError as exc:
+            print("Camera settings screenshot skipped:", exc, file=sys.stderr)
         adb("shell", "input", "keyevent", "4")
         tap("Otvori galeriju")
         capture(output / "13_gallery.png", "Galerija")
     except (RuntimeError, subprocess.SubprocessError, ValueError) as exc:
         print("Optional Android screenshot sequence stopped:", exc, file=sys.stderr)
         # Only verified real screenshots are published.
-    
+
+    # Try additional real modes independently: an unsupported OEM feature
+    # must never prevent the already verified basic screenshots being published.
+    try:
+        adb("shell", "input", "keyevent", "4")
+        visible("Načini snimanja")
+        tap("O aplikaciji LENSIGO")
+        capture(output / "19_about.png", "O aplikaciji")
+        adb("shell", "input", "keyevent", "4")
+    except (RuntimeError, subprocess.SubprocessError, ValueError) as exc:
+        print("About screenshot skipped:", exc, file=sys.stderr)
+
+    for filename, tile, strip in (
+        ("06_video", "Video", "VIDEO"),
+        ("07_pro", "Pro način", "PRO"),
+        ("08_night", "Noćni način", "NOĆ"),
+        ("09_portrait", "Portret", "PORTRET"),
+        ("10_panorama", "Panorama", "PANORAMA"),
+        ("11_dual", "Dual kamera", "DUAL"),
+        ("12_filters", "Filteri", "FILTERI"),
+    ):
+        try:
+            visible("PRO CAMERA · BY BRENDIGO", timeout_seconds=12)
+            tap_home_tile(tile)
+            # CameraX may need some time to bind after the navigation.
+            time.sleep(2.2)
+            verify_camera_mode(strip)
+            capture(output / (filename + ".png"), strip)
+        except (RuntimeError, subprocess.SubprocessError, ValueError) as exc:
+            print("Mode screenshot skipped:", filename, exc, file=sys.stderr)
+        finally:
+            # Each mode is independent; Back always returns to Home when
+            # the camera is active, preventing an unsupported mode blocking CI.
+            try:
+                root = ui_tree()
+                if find_label(root, "PRO CAMERA · BY BRENDIGO") is None:
+                    adb("shell", "input", "keyevent", "4")
+            except (RuntimeError, subprocess.SubprocessError, ET.ParseError):
+                pass
+
     publish_gallery(root, output, os.environ.get("SOURCE_RUN_ID", "unknown"))
     print("README updated with verified emulator screenshots only.")
     return 0
